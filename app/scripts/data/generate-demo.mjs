@@ -130,7 +130,9 @@ function generateRecords() {
     const dayOffset = Math.floor(random() * 20);
     const updated = new Date(Date.UTC(2026, 7, 8 - dayOffset, 12, 0, 0));
     return canonicalRecord({
-      num_cep: `D${String(100000 + sequence)}`,
+      num_cep: index < 30
+        ? String(sequence).padStart(5, "0")
+        : String(100000 + sequence),
       nombres_completos: `PERSONA SINTETICA ${String(sequence).padStart(3, "0")} ${first} ${paternal} ${maternal}`,
       consejo_regional: councils[index % councils.length],
       estado_habilidad: random() > 0.25 ? "Habilitado" : "Inhabilitado",
@@ -246,4 +248,3 @@ async function main() {
 }
 
 await main();
-

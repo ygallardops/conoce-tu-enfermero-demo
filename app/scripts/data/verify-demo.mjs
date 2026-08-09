@@ -38,7 +38,7 @@ function validateSnapshot(snapshot, file) {
     for (const required of allowedFields) {
       if (!(required in record)) fail(`${file}[${index}]: falta ${required}.`);
     }
-    if (!/^[A-Z0-9-]{1,20}$/.test(record.num_cep)) fail(`${file}[${index}]: num_cep inválido.`);
+    if (!/^\d{5,6}$/.test(record.num_cep)) fail(`${file}[${index}]: num_cep inválido.`);
     if (seen.has(record.num_cep)) fail(`${file}: num_cep duplicado ${record.num_cep}.`);
     seen.add(record.num_cep);
     if (!["Habilitado", "Inhabilitado"].includes(record.estado_habilidad)) {
@@ -59,4 +59,3 @@ const snapshots = await Promise.all(files.map(async (file) => {
 const checksums = snapshots.map(([file, snapshot]) => validateSnapshot(snapshot, file));
 if (new Set(checksums).size !== 1) fail("Los adaptadores no son equivalentes.");
 console.log(`Verificación correcta: ${files.length} orígenes, checksum común ${checksums[0]}.`);
-

@@ -27,14 +27,14 @@ export function validateConsultaPayload(body) {
   }
 
   const normalized = normalizeSearchValue(valor);
-  const maxLength = tipo === "cep" ? 20 : 160;
-  const minLength = tipo === "cep" ? 1 : 3;
+  const maxLength = tipo === "cep" ? 6 : 160;
+  const minLength = tipo === "cep" ? 5 : 3;
 
   if (normalized.length < minLength || normalized.length > maxLength) {
     return { ok: false, message: "El valor de consulta no tiene una longitud válida." };
   }
-  if (tipo === "cep" && !/^[A-Z0-9-]+$/.test(normalized)) {
-    return { ok: false, message: "El número CEP solo puede contener letras, números o guiones." };
+  if (tipo === "cep" && !/^\d{5,6}$/.test(normalized)) {
+    return { ok: false, message: "El número CEP debe contener exactamente 5 o 6 dígitos." };
   }
 
   return { ok: true, value: { tipo, valor: normalized } };

@@ -52,12 +52,31 @@ const schemaStatements = [
 
 export async function ensureDemoSnapshot(db: D1Database): Promise<string> {
   await db.batch(schemaStatements.map((statement) => db.prepare(statement)));
-  const existing = await db.prepare("SELECT COUNT(*) AS total FROM padron_snapshots").first<{ total: number }>();
-  if ((existing?.total ?? 0) > 0) return demoSnapshot.generated_at;
+  const existing = await db
+    .prepare("SELECT checksum_sha256 FROM padron_snapshots WHERE dataset_version = ?")
+    .bind(demoSnapshot.dataset_version)
+    .first<{ checksum_sha256: string }>();
+  if (existing?.checksum_sha256 === demoSnapshot.checksum_sha256) return demoSnapshot.generated_at;
 
   const importedAt = new Date().toISOString();
-  const snapshotStatement = db
-    .prepare(
+  const snapshotStatement = existing
+    ? db
+      .prepare(
+        `UPDATE padron_snapshots SET
+          schema_version = ?, generated_at = ?, source = ?, record_count = ?,
+          checksum_sha256 = ?, status = 'active', imported_at = ?
+        WHERE dataset_version = ?`,
+      )
+      .bind(
+        demoSnapshot.schema_version,
+        demoSnapshot.generated_at,
+        demoSnapshot.source,
+        demoSnapshot.record_count,
+        demoSnapshot.checksum_sha256,
+        importedAt,
+        demoSnapshot.dataset_version,
+      )
+    : db.prepare(
       `INSERT INTO padron_snapshots (
         dataset_version, schema_version, generated_at, source, record_count,
         checksum_sha256, status, imported_at
@@ -92,7 +111,10 @@ export async function ensureDemoSnapshot(db: D1Database): Promise<string> {
       ),
   );
 
-  await db.batch([snapshotStatement, ...recordStatements]);
+  const resetStatements = existing
+    ? [db.prepare("DELETE FROM padron_publico WHERE dataset_version = ?").bind(demoSnapshot.dataset_version)]
+    : [];
+  await db.batch([...resetStatements, snapshotStatement, ...recordStatements]);
   return demoSnapshot.generated_at;
 }
 

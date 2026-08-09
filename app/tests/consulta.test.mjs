@@ -18,8 +18,16 @@ async function render() {
 test("normaliza la búsqueda y rechaza comodines", () => {
   assert.equal(normalizeSearchValue("  María   López  "), "MARIA LOPEZ");
   assert.deepEqual(
-    validateConsultaPayload({ tipo: "cep", valor: "d-1001", turnstile_token: "local" }),
-    { ok: true, value: { tipo: "cep", valor: "D-1001" } },
+    validateConsultaPayload({ tipo: "cep", valor: "00123", turnstile_token: "local" }),
+    { ok: true, value: { tipo: "cep", valor: "00123" } },
+  );
+  assert.equal(
+    validateConsultaPayload({ tipo: "cep", valor: "D-1001", turnstile_token: "local" }).ok,
+    false,
+  );
+  assert.equal(
+    validateConsultaPayload({ tipo: "cep", valor: "123456", turnstile_token: "local" }).ok,
+    true,
   );
   assert.equal(
     validateConsultaPayload({ tipo: "nombre", valor: "ANA*", turnstile_token: "local" }).ok,

@@ -87,7 +87,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
   }, []);
 
   const example = useMemo(
-    () => (searchType === "cep" ? "D100001" : "PERSONA SINTETICA 001"),
+    () => (searchType === "cep" ? "00001" : "PERSONA SINTETICA 001"),
     [searchType],
   );
 
@@ -221,11 +221,17 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
               id="consulta-valor"
               name="valor"
               value={value}
-              onChange={(event) => setValue(event.target.value)}
+              onChange={(event) => setValue(
+                searchType === "cep"
+                  ? event.target.value.replace(/\D/g, "").slice(0, 6)
+                  : event.target.value,
+              )}
               placeholder={`Ejemplo: ${example}`}
               autoComplete="off"
-              maxLength={searchType === "cep" ? 20 : 160}
-              inputMode={searchType === "cep" ? "text" : "text"}
+              maxLength={searchType === "cep" ? 6 : 160}
+              minLength={searchType === "cep" ? 5 : 3}
+              inputMode={searchType === "cep" ? "numeric" : "text"}
+              pattern={searchType === "cep" ? "[0-9]{5,6}" : undefined}
               aria-describedby="consulta-help consulta-status"
             />
             <button className="search-submit" type="submit" disabled={isLoading}>
@@ -233,7 +239,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
             </button>
           </div>
           <p id="consulta-help" className="field-help">
-            Solo se admiten coincidencias exactas. No se permiten listados, comodines ni descargas.
+            El número CEP tiene 5 o 6 dígitos y puede iniciar con cero. Solo se admiten coincidencias exactas; no se permiten listados, comodines ni descargas.
           </p>
           <div ref={turnstileElement} className="turnstile" aria-label="Verificación anti-bots" />
         </form>
