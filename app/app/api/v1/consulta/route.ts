@@ -8,6 +8,19 @@ const responseHeaders = {
   "x-content-type-options": "nosniff",
 };
 
+async function verifyTurnstile(token: string, request: Request) {
+  const secret = (env as typeof env & { TURNSTILE_SECRET_KEY?: string }).TURNSTILE_SECRET_KEY;
+  if (!secret) return token === "local-demo-token";
+  const form = new FormData();
+  form.set("secret", secret);
+  form.set("response", token);
+  const ip = request.headers.get("CF-Connecting-IP");
+  if (ip) form.set("remoteip", ip);
+  const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: form });
+  const result = (await response.json()) as { success?: boolean };
+  return result.success === true;
+}
+
 function errorResponse(requestId: string, status: number, message: string) {
   return Response.json(
     { request_id: requestId, error: { message } },
@@ -28,6 +41,11 @@ export async function POST(request: Request) {
   const validation = validateConsultaPayload(body);
   if (!validation.ok) {
     return errorResponse(requestId, 400, validation.message);
+  }
+
+  const turnstileToken = (body as { turnstile_token: string }).turnstile_token;
+  if (!(await verifyTurnstile(turnstileToken, request))) {
+    return errorResponse(requestId, 403, "No fue posible validar la consulta. Inténtalo nuevamente.");
   }
 
   try {

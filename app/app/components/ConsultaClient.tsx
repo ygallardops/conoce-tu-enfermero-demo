@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import type { BrandProfile } from "@/lib/brand";
 
@@ -71,6 +71,20 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileElement = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!__TURNSTILE_SITE_KEY__ || !turnstileElement.current) return;
+    const render = () => window.turnstile?.render(turnstileElement.current!, { sitekey: __TURNSTILE_SITE_KEY__, callback: setTurnstileToken, "expired-callback": () => setTurnstileToken("") });
+    const existing = document.querySelector('script[src^="https://challenges.cloudflare.com/turnstile"]');
+    if (existing) { render(); return; }
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    script.onload = render;
+    document.head.append(script);
+  }, []);
 
   const example = useMemo(
     () => (searchType === "cep" ? "D100001" : "PERSONA SINTETICA 001"),
@@ -100,7 +114,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
         body: JSON.stringify({
           tipo: searchType,
           valor: trimmed,
-          turnstile_token: "local-demo-token",
+          turnstile_token: __TURNSTILE_SITE_KEY__ ? turnstileToken : "local-demo-token",
         }),
       });
       const body = (await response.json()) as ConsultaResponse & {
@@ -221,6 +235,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
           <p id="consulta-help" className="field-help">
             Solo se admiten coincidencias exactas. No se permiten listados, comodines ni descargas.
           </p>
+          <div ref={turnstileElement} className="turnstile" aria-label="Verificación anti-bots" />
         </form>
       </section>
 

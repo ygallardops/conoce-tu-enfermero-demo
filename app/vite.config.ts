@@ -8,6 +8,7 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
 
 const { d1, r2 } = hostingConfig;
 const brandProfile = process.env.PUBLIC_BRAND_PROFILE ?? "demo";
+const turnstileSiteKey = process.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
@@ -47,6 +48,7 @@ export default defineConfig(async () => {
   return {
     define: {
       __BRAND_PROFILE__: JSON.stringify(brandProfile),
+      __TURNSTILE_SITE_KEY__: JSON.stringify(turnstileSiteKey),
     },
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }

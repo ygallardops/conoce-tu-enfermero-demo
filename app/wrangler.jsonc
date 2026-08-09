@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "conoce-tu-enfermero-demo",
+  "main": "./dist/server/index.js",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "conoce-tu-enfermero-demo",
+      "database_id": "65e02e90-3bd9-4873-a146-b0ae9b0c048a"
+    }
+  ],
+  "vars": {
+    "PUBLIC_BRAND_PROFILE": "demo"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
