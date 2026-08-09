@@ -1,0 +1,25 @@
+{
+  "synthetic": true,
+  "generated_at": "2026-08-09T15:00:00.000Z",
+  "sources": [
+    {
+      "source": "demo:postgres-view-json",
+      "output": "from-json.json",
+      "record_count": 60,
+      "checksum_sha256": "754fac9509b8adc753c1ab8d9c411ae11b53574045b96509126c347751aa3504"
+    },
+    {
+      "source": "demo:legacy-csv",
+      "output": "from-csv.json",
+      "record_count": 60,
+      "checksum_sha256": "754fac9509b8adc753c1ab8d9c411ae11b53574045b96509126c347751aa3504"
+    },
+    {
+      "source": "demo:api-ndjson",
+      "output": "from-api-ndjson.json",
+      "record_count": 60,
+      "checksum_sha256": "754fac9509b8adc753c1ab8d9c411ae11b53574045b96509126c347751aa3504"
+    }
+  ],
+  "equivalent": true
+}

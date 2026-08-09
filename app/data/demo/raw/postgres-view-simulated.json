@@ -1,0 +1,486 @@
+{
+  "export_type": "postgres_readonly_view_simulation",
+  "synthetic": true,
+  "rows": [
+    {
+      "cep": "D100001",
+      "nombre_publico": "PERSONA SINTETICA 001 PATRICIA QUISPE ALVAREZ",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-07-26T12:00:00.000Z",
+      "foto": null
+    },
+    {
+      "cep": "D100002",
+      "nombre_publico": "PERSONA SINTETICA 002 CARMEN VARGAS QUISPE",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-26T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-002.webp"
+    },
+    {
+      "cep": "D100003",
+      "nombre_publico": "PERSONA SINTETICA 003 ROSA ALVAREZ ROJAS",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-26T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-003.webp"
+    },
+    {
+      "cep": "D100004",
+      "nombre_publico": "PERSONA SINTETICA 004 MARIA SALAZAR CASTILLO",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-03T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-004.webp"
+    },
+    {
+      "cep": "D100005",
+      "nombre_publico": "PERSONA SINTETICA 005 GLORIA VARGAS TORRES",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-07-28T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-005.webp"
+    },
+    {
+      "cep": "D100006",
+      "nombre_publico": "PERSONA SINTETICA 006 GLORIA HUAMAN FLORES",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-03T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-006.webp"
+    },
+    {
+      "cep": "D100007",
+      "nombre_publico": "PERSONA SINTETICA 007 GLORIA ROJAS MAMANI",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-29T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-007.webp"
+    },
+    {
+      "cep": "D100008",
+      "nombre_publico": "PERSONA SINTETICA 008 ROSA SALAZAR ROJAS",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-08-07T12:00:00.000Z",
+      "foto": null
+    },
+    {
+      "cep": "D100009",
+      "nombre_publico": "PERSONA SINTETICA 009 ELENA ROJAS SALAZAR",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-07T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-009.webp"
+    },
+    {
+      "cep": "D100010",
+      "nombre_publico": "PERSONA SINTETICA 010 GLORIA QUISPE CHAVEZ",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-04T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-010.webp"
+    },
+    {
+      "cep": "D100011",
+      "nombre_publico": "PERSONA SINTETICA 011 JULIA VARGAS QUISPE",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-01T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-011.webp"
+    },
+    {
+      "cep": "D100012",
+      "nombre_publico": "PERSONA SINTETICA 012 LUCIA CHAVEZ ALVAREZ",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-02T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-012.webp"
+    },
+    {
+      "cep": "D100013",
+      "nombre_publico": "PERSONA SINTETICA 013 ROSA VARGAS GARCIA",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-24T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-013.webp"
+    },
+    {
+      "cep": "D100014",
+      "nombre_publico": "PERSONA SINTETICA 014 ROSA SALAZAR SALAZAR",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-01T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-014.webp"
+    },
+    {
+      "cep": "D100015",
+      "nombre_publico": "PERSONA SINTETICA 015 SOFIA SALAZAR FLORES",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-06T12:00:00.000Z",
+      "foto": null
+    },
+    {
+      "cep": "D100016",
+      "nombre_publico": "PERSONA SINTETICA 016 ROSA TORRES FLORES",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-08-07T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-016.webp"
+    },
+    {
+      "cep": "D100017",
+      "nombre_publico": "PERSONA SINTETICA 017 ANA SALAZAR RAMIREZ",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-24T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-017.webp"
+    },
+    {
+      "cep": "D100018",
+      "nombre_publico": "PERSONA SINTETICA 018 MELISSA VARGAS HUAMAN",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-07T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-018.webp"
+    },
+    {
+      "cep": "D100019",
+      "nombre_publico": "PERSONA SINTETICA 019 MARIA RAMIREZ RAMIREZ",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-08-02T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-019.webp"
+    },
+    {
+      "cep": "D100020",
+      "nombre_publico": "PERSONA SINTETICA 020 ROSA VARGAS ALVAREZ",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-05T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-020.webp"
+    },
+    {
+      "cep": "D100021",
+      "nombre_publico": "PERSONA SINTETICA 021 ANA ROJAS VARGAS",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-07-29T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-021.webp"
+    },
+    {
+      "cep": "D100022",
+      "nombre_publico": "PERSONA SINTETICA 022 CARMEN MENDOZA TORRES",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-01T12:00:00.000Z",
+      "foto": null
+    },
+    {
+      "cep": "D100023",
+      "nombre_publico": "PERSONA SINTETICA 023 ELENA CASTILLO MAMANI",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-03T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-023.webp"
+    },
+    {
+      "cep": "D100024",
+      "nombre_publico": "PERSONA SINTETICA 024 MELISSA VARGAS ALVAREZ",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-29T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-024.webp"
+    },
+    {
+      "cep": "D100025",
+      "nombre_publico": "PERSONA SINTETICA 025 VERONICA SANCHEZ TORRES",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-22T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-025.webp"
+    },
+    {
+      "cep": "D100026",
+      "nombre_publico": "PERSONA SINTETICA 026 PATRICIA SALAZAR GARCIA",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-07-31T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-026.webp"
+    },
+    {
+      "cep": "D100027",
+      "nombre_publico": "PERSONA SINTETICA 027 CARMEN QUISPE MENDOZA",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-26T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-027.webp"
+    },
+    {
+      "cep": "D100028",
+      "nombre_publico": "PERSONA SINTETICA 028 DANIELA RAMIREZ ROJAS",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-23T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-028.webp"
+    },
+    {
+      "cep": "D100029",
+      "nombre_publico": "PERSONA SINTETICA 029 GLORIA ALVAREZ VARGAS",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-08-05T12:00:00.000Z",
+      "foto": null
+    },
+    {
+      "cep": "D100030",
+      "nombre_publico": "PERSONA SINTETICA 030 MELISSA VARGAS VARGAS",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-22T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-030.webp"
+    },
+    {
+      "cep": "D100031",
+      "nombre_publico": "PERSONA SINTETICA 031 ROSA GARCIA CHAVEZ",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-02T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-031.webp"
+    },
+    {
+      "cep": "D100032",
+      "nombre_publico": "PERSONA SINTETICA 032 VERONICA TORRES MENDOZA",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-08-01T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-032.webp"
+    },
+    {
+      "cep": "D100033",
+      "nombre_publico": "PERSONA SINTETICA 033 MARIA SALAZAR QUISPE",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-01T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-033.webp"
+    },
+    {
+      "cep": "D100034",
+      "nombre_publico": "PERSONA SINTETICA 034 ELENA SANCHEZ ALVAREZ",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-08-08T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-034.webp"
+    },
+    {
+      "cep": "D100035",
+      "nombre_publico": "PERSONA SINTETICA 035 VERONICA MENDOZA ROJAS",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-27T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-035.webp"
+    },
+    {
+      "cep": "D100036",
+      "nombre_publico": "PERSONA SINTETICA 036 VERONICA MAMANI QUISPE",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-20T12:00:00.000Z",
+      "foto": null
+    },
+    {
+      "cep": "D100037",
+      "nombre_publico": "PERSONA SINTETICA 037 DANIELA RAMIREZ TORRES",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-21T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-037.webp"
+    },
+    {
+      "cep": "D100038",
+      "nombre_publico": "PERSONA SINTETICA 038 ELENA CHAVEZ VARGAS",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-29T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-038.webp"
+    },
+    {
+      "cep": "D100039",
+      "nombre_publico": "PERSONA SINTETICA 039 ANDREA FLORES MENDOZA",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-07T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-039.webp"
+    },
+    {
+      "cep": "D100040",
+      "nombre_publico": "PERSONA SINTETICA 040 VERONICA CHAVEZ RAMIREZ",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-05T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-040.webp"
+    },
+    {
+      "cep": "D100041",
+      "nombre_publico": "PERSONA SINTETICA 041 ROSA SANCHEZ MENDOZA",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-24T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-041.webp"
+    },
+    {
+      "cep": "D100042",
+      "nombre_publico": "PERSONA SINTETICA 042 VERONICA CHAVEZ VARGAS",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-07-29T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-042.webp"
+    },
+    {
+      "cep": "D100043",
+      "nombre_publico": "PERSONA SINTETICA 043 VERONICA CHAVEZ HUAMAN",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-28T12:00:00.000Z",
+      "foto": null
+    },
+    {
+      "cep": "D100044",
+      "nombre_publico": "PERSONA SINTETICA 044 ANDREA QUISPE VARGAS",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-04T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-044.webp"
+    },
+    {
+      "cep": "D100045",
+      "nombre_publico": "PERSONA SINTETICA 045 ANA CHAVEZ CHAVEZ",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-07T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-045.webp"
+    },
+    {
+      "cep": "D100046",
+      "nombre_publico": "PERSONA SINTETICA 046 SOFIA SALAZAR QUISPE",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-05T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-046.webp"
+    },
+    {
+      "cep": "D100047",
+      "nombre_publico": "PERSONA SINTETICA 047 ANA TORRES RAMIREZ",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-21T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-047.webp"
+    },
+    {
+      "cep": "D100048",
+      "nombre_publico": "PERSONA SINTETICA 048 ANDREA HUAMAN FLORES",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-29T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-048.webp"
+    },
+    {
+      "cep": "D100049",
+      "nombre_publico": "PERSONA SINTETICA 049 SOFIA ROJAS CASTILLO",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-03T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-049.webp"
+    },
+    {
+      "cep": "D100050",
+      "nombre_publico": "PERSONA SINTETICA 050 GLORIA RAMIREZ ROJAS",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-06T12:00:00.000Z",
+      "foto": null
+    },
+    {
+      "cep": "D100051",
+      "nombre_publico": "PERSONA SINTETICA 051 MELISSA SALAZAR ROJAS",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-05T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-051.webp"
+    },
+    {
+      "cep": "D100052",
+      "nombre_publico": "PERSONA SINTETICA 052 ANA TORRES RAMIREZ",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-07-31T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-052.webp"
+    },
+    {
+      "cep": "D100053",
+      "nombre_publico": "PERSONA SINTETICA 053 LUCIA SALAZAR TORRES",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-21T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-053.webp"
+    },
+    {
+      "cep": "D100054",
+      "nombre_publico": "PERSONA SINTETICA 054 ANA SALAZAR TORRES",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-30T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-054.webp"
+    },
+    {
+      "cep": "D100055",
+      "nombre_publico": "PERSONA SINTETICA 055 GLORIA VARGAS GARCIA",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-05T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-055.webp"
+    },
+    {
+      "cep": "D100056",
+      "nombre_publico": "PERSONA SINTETICA 056 ROSA QUISPE MAMANI",
+      "consejo": "CONSEJO REGIONAL II LA LIBERTAD",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-22T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-056.webp"
+    },
+    {
+      "cep": "D100057",
+      "nombre_publico": "PERSONA SINTETICA 057 ROSA RAMIREZ ALVAREZ",
+      "consejo": "CONSEJO REGIONAL DEMO LIMA",
+      "estado": "INACTIVO",
+      "actualizado_en": "2026-07-21T12:00:00.000Z",
+      "foto": null
+    },
+    {
+      "cep": "D100058",
+      "nombre_publico": "PERSONA SINTETICA 058 CARMEN QUISPE GARCIA",
+      "consejo": "CONSEJO REGIONAL DEMO AREQUIPA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-27T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-058.webp"
+    },
+    {
+      "cep": "D100059",
+      "nombre_publico": "PERSONA SINTETICA 059 MELISSA CASTILLO VARGAS",
+      "consejo": "CONSEJO REGIONAL DEMO CUSCO",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-07-23T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-059.webp"
+    },
+    {
+      "cep": "D100060",
+      "nombre_publico": "PERSONA SINTETICA 060 ELENA GARCIA ROJAS",
+      "consejo": "CONSEJO REGIONAL DEMO PIURA",
+      "estado": "ACTIVO",
+      "actualizado_en": "2026-08-04T12:00:00.000Z",
+      "foto": "/demo/fotos/persona-sintetica-060.webp"
+    }
+  ]
+}

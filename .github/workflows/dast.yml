@@ -1,0 +1,29 @@
+name: DAST del entorno demo
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 9 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  zap-baseline:
+    name: OWASP ZAP Baseline
+    if: vars.DEMO_BASE_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Obtener configuración
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Escanear dominio demo sin crear incidencias
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: ${{ vars.DEMO_BASE_URL }}
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: zap-demo-report
+

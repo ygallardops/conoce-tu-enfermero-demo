@@ -1,0 +1,102 @@
+openapi: 3.1.0
+info:
+  title: API Conoce a tu Enfermero
+  version: 0.1.0
+  description: Contrato de consulta pública del padrón proyectado del CEP.
+servers:
+  - url: https://enfermeros-demo.yersongallardo.com
+    description: Demostración pública con datos sintéticos
+paths:
+  /api/v1/consulta:
+    post:
+      operationId: consultarColegiado
+      summary: Consulta exacta por número CEP o nombre completo
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsultaRequest'
+      responses:
+        '200':
+          description: Resultado acotado de la consulta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultaResponse'
+        '400':
+          description: Entrada inválida
+        '429':
+          description: Límite temporal excedido
+components:
+  schemas:
+    ConsultaRequest:
+      type: object
+      additionalProperties: false
+      required: [tipo, valor, turnstile_token]
+      properties:
+        tipo:
+          type: string
+          enum: [cep, nombre]
+        valor:
+          type: string
+          minLength: 3
+          maxLength: 160
+          description: Valor exacto; no admite comodines.
+        turnstile_token:
+          type: string
+          minLength: 1
+          maxLength: 4096
+    ConsultaResponse:
+      type: object
+      additionalProperties: false
+      required: [request_id, resultados, total, datos_actualizados_al]
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        resultados:
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/ColegiadoPublico'
+        total:
+          type: integer
+          minimum: 0
+          maximum: 5
+        datos_actualizados_al:
+          type: string
+          format: date-time
+    ColegiadoPublico:
+      type: object
+      additionalProperties: false
+      required:
+        - num_cep
+        - nombres_completos
+        - consejo_regional
+        - estado_habilidad
+        - fecha_actualizacion
+        - foto_url
+      properties:
+        num_cep:
+          type: string
+          minLength: 1
+          maxLength: 20
+        nombres_completos:
+          type: string
+          minLength: 3
+          maxLength: 160
+        consejo_regional:
+          type: string
+          minLength: 3
+          maxLength: 160
+        estado_habilidad:
+          type: string
+          enum: [Habilitado, Inhabilitado]
+        fecha_actualizacion:
+          type: string
+          format: date-time
+        foto_url:
+          type: [string, 'null']
+          maxLength: 500

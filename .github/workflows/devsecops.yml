@@ -1,0 +1,84 @@
+name: DevSecOps
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: devsecops-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Calidad, pruebas y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Configurar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Activar pnpm fijado
+        run: corepack enable && corepack prepare pnpm@11.16.0 --activate
+      - name: Instalar dependencias reproducibles
+        run: pnpm install --frozen-lockfile
+      - name: Generar y verificar datos sintéticos
+        run: pnpm run data:demo && pnpm run data:verify
+      - name: Analizar estilo y tipos
+        run: pnpm run lint
+      - name: Ejecutar pruebas y build
+        run: pnpm run test
+      - name: Auditar dependencias de producción
+        run: pnpm audit --prod --audit-level high
+
+  dependency-review:
+    name: Revisión de dependencias
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Bloquear vulnerabilidades altas o críticas nuevas
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  codeql:
+    name: SAST CodeQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Inicializar CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          build-mode: none
+          queries: security-extended
+      - name: Analizar
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:javascript-typescript
+

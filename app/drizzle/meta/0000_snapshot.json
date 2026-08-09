@@ -1,0 +1,198 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "fefbb9d9-6e10-4b33-a244-8f70772c770a",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "tables": {
+    "padron_publico": {
+      "name": "padron_publico",
+      "columns": {
+        "dataset_version": {
+          "name": "dataset_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "num_cep": {
+          "name": "num_cep",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombres_completos": {
+          "name": "nombres_completos",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre_normalizado": {
+          "name": "nombre_normalizado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "consejo_regional": {
+          "name": "consejo_regional",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "estado_habilidad": {
+          "name": "estado_habilidad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fecha_actualizacion": {
+          "name": "fecha_actualizacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "foto_url": {
+          "name": "foto_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_padron_cep_version": {
+          "name": "idx_padron_cep_version",
+          "columns": [
+            "num_cep",
+            "dataset_version"
+          ],
+          "isUnique": false
+        },
+        "idx_padron_nombre_version": {
+          "name": "idx_padron_nombre_version",
+          "columns": [
+            "nombre_normalizado",
+            "dataset_version"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "padron_publico_dataset_version_padron_snapshots_dataset_version_fk": {
+          "name": "padron_publico_dataset_version_padron_snapshots_dataset_version_fk",
+          "tableFrom": "padron_publico",
+          "tableTo": "padron_snapshots",
+          "columnsFrom": [
+            "dataset_version"
+          ],
+          "columnsTo": [
+            "dataset_version"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "padron_publico_dataset_version_num_cep_pk": {
+          "columns": [
+            "dataset_version",
+            "num_cep"
+          ],
+          "name": "padron_publico_dataset_version_num_cep_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "padron_snapshots": {
+      "name": "padron_snapshots",
+      "columns": {
+        "dataset_version": {
+          "name": "dataset_version",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "schema_version": {
+          "name": "schema_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "generated_at": {
+          "name": "generated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "record_count": {
+          "name": "record_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "checksum_sha256": {
+          "name": "checksum_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'staging'"
+        },
+        "imported_at": {
+          "name": "imported_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_padron_snapshots_status": {
+          "name": "idx_padron_snapshots_status",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

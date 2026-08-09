@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://enfermeros-demo.yersongallardo.com/schemas/padron-snapshot-v1.json",
+  "title": "Snapshot del padrón público CEP",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_version",
+    "generated_at",
+    "source",
+    "record_count",
+    "checksum_sha256",
+    "records"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "dataset_version": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "source": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "record_count": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+    "checksum_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "records": {
+      "type": "array",
+      "maxItems": 1000000,
+      "items": { "$ref": "#/$defs/public_record" }
+    }
+  },
+  "$defs": {
+    "public_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "num_cep",
+        "nombres_completos",
+        "consejo_regional",
+        "estado_habilidad",
+        "fecha_actualizacion",
+        "foto_url"
+      ],
+      "properties": {
+        "num_cep": { "type": "string", "pattern": "^[A-Z0-9-]{1,20}$" },
+        "nombres_completos": { "type": "string", "minLength": 3, "maxLength": 160 },
+        "consejo_regional": { "type": "string", "minLength": 3, "maxLength": 160 },
+        "estado_habilidad": { "enum": ["Habilitado", "Inhabilitado"] },
+        "fecha_actualizacion": { "type": "string", "format": "date-time" },
+        "foto_url": {
+          "anyOf": [
+            { "type": "string", "minLength": 1, "maxLength": 500 },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}

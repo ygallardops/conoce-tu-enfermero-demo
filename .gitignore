@@ -1,0 +1,70 @@
+# Dependencias
+node_modules/
+app/node_modules/
+.pnpm-store/
+
+# Builds, cachés y ejecución local
+.next/
+.vinext/
+.wrangler/
+dist/
+out/
+coverage/
+app/.next/
+app/.vinext/
+app/.wrangler/
+app/dist/
+app/out/
+app/coverage/
+*.tsbuildinfo
+
+# Variables, secretos y credenciales
+.env
+.env.*
+!.env.example
+app/.env
+app/.env.*
+!app/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Base de datos y estado local
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+.dev.vars
+app/.dev.vars
+
+# Activos institucionales no autorizados para publicación
+app/public/brands/cep-preview/
+
+# Informes y artefactos locales de seguridad
+zap-report/
+zap-*.html
+zap-*.json
+reports/
+qa_render/
+
+# Gobierno y documentación interna de trabajo
+AGENTS.md
+PROJECT.md
+docs/
+.private/
+
+# Logs y temporales
+*.log
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Editores y sistema operativo
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
