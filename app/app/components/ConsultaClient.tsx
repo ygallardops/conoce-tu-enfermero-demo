@@ -71,12 +71,21 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [hasRequestError, setHasRequestError] = useState(false);
+  const [formAlert, setFormAlert] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileElement = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!__TURNSTILE_SITE_KEY__ || !turnstileElement.current) return;
-    const render = () => window.turnstile?.render(turnstileElement.current!, { sitekey: __TURNSTILE_SITE_KEY__, callback: setTurnstileToken, "expired-callback": () => setTurnstileToken("") });
+    const render = () => window.turnstile?.render(turnstileElement.current!, {
+      sitekey: __TURNSTILE_SITE_KEY__,
+      callback: (token) => {
+        setTurnstileToken(token);
+        setFormAlert(null);
+      },
+      "expired-callback": () => setTurnstileToken(""),
+    });
     const existing = document.querySelector('script[src^="https://challenges.cloudflare.com/turnstile"]');
     if (existing) { render(); return; }
     const script = document.createElement("script");
@@ -94,18 +103,28 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = value.trim();
+    setFormAlert(null);
 
     if (!trimmed) {
       setResults([]);
       setUpdatedAt(null);
       setHasSearched(false);
-      setMessage("Ingresa un número CEP o un nombre completo.");
+      setFormAlert("Ingresa un número CEP o un nombre completo antes de consultar.");
+      return;
+    }
+
+    if (__TURNSTILE_SITE_KEY__ && !turnstileToken) {
+      setResults([]);
+      setUpdatedAt(null);
+      setHasSearched(false);
+      setFormAlert("Completa la verificación «Verifique que es un ser humano» antes de consultar.");
       return;
     }
 
     setIsLoading(true);
     setMessage("Consultando padrón público…");
     setHasSearched(true);
+    setHasRequestError(false);
 
     try {
       const response = await fetch("/api/v1/consulta", {
@@ -135,6 +154,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
     } catch (error) {
       setResults([]);
       setUpdatedAt(null);
+      setHasRequestError(true);
       setMessage(
         error instanceof Error
           ? error.message
@@ -151,6 +171,8 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
     setResults([]);
     setUpdatedAt(null);
     setHasSearched(false);
+    setHasRequestError(false);
+    setFormAlert(null);
     setMessage("Ingresa un dato para iniciar una consulta.");
   }
 
@@ -221,11 +243,14 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
               id="consulta-valor"
               name="valor"
               value={value}
-              onChange={(event) => setValue(
-                searchType === "cep"
-                  ? event.target.value.replace(/\D/g, "").slice(0, 6)
-                  : event.target.value,
-              )}
+              onChange={(event) => {
+                setFormAlert(null);
+                setValue(
+                  searchType === "cep"
+                    ? event.target.value.replace(/\D/g, "").slice(0, 6)
+                    : event.target.value,
+                );
+              }}
               placeholder={`Ejemplo: ${example}`}
               autoComplete="off"
               maxLength={searchType === "cep" ? 6 : 160}
@@ -242,10 +267,11 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
             El número CEP tiene 5 o 6 dígitos y puede iniciar con cero. Solo se admiten coincidencias exactas; no se permiten listados, comodines ni descargas.
           </p>
           <div ref={turnstileElement} className="turnstile" aria-label="Verificación anti-bots" />
+          {formAlert ? <p className="form-alert" role="alert">{formAlert}</p> : null}
         </form>
       </section>
 
-      <section className="results" aria-labelledby="resultados-title">
+      {hasSearched ? <section className="results" aria-labelledby="resultados-title">
         <div className="results-heading">
           <div>
             <p className="eyebrow">Resultado de la consulta</p>
@@ -258,7 +284,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
           {message}
         </p>
 
-        {hasSearched && results.length === 0 && !isLoading ? (
+        {!hasRequestError && results.length === 0 && !isLoading ? (
           <div className="empty-state">
             <strong>Sin coincidencias exactas</strong>
             <p>Comprueba la escritura. Para probar la demo, usa {example}.</p>
@@ -293,7 +319,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
             </article>
           ))}
         </div>
-      </section>
+      </section> : null}
 
       <aside className="disclaimer" aria-label="Información de la demostración">
         <strong>{brand.disclaimer}</strong>
