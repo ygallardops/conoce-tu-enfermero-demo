@@ -99,6 +99,9 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
     () => (searchType === "cep" ? "00001" : "PERSONA SINTETICA 001"),
     [searchType],
   );
+  const searchHelp = searchType === "cep"
+    ? "Ingresa 5 o 6 dígitos. Puede iniciar con cero; la coincidencia es exacta."
+    : "Ingresa el nombre completo tal como aparece en el padrón. La coincidencia es exacta.";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -198,11 +201,19 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
       </header>
 
       <section className="hero" aria-labelledby="page-title">
-        <p className="eyebrow">Consulta ciudadana · datos de demostración</p>
-        <h1 id="page-title">Verifica la colegiatura y habilidad profesional.</h1>
+        <div className="hero-kicker">
+          <span className="eyebrow">Consulta ciudadana</span>
+          <span className="hero-demo-note">Datos de demostración</span>
+        </div>
+        <h1 id="page-title">Verifica la habilitación de un profesional de enfermería.</h1>
         <p className="hero-copy">
-          Busca una coincidencia exacta por número CEP o nombre completo. Esta versión usa un padrón sintético y no emite constancias oficiales.
+          Consulta por número CEP o nombre completo. La respuesta es puntual, no requiere registro y no constituye una constancia oficial.
         </p>
+        <ul className="hero-promises" aria-label="Características de la consulta">
+          <li>Sin registro</li>
+          <li>Coincidencia exacta</li>
+          <li>Hasta 5 resultados</li>
+        </ul>
       </section>
 
       <section id="consulta" className="consultation-card" aria-labelledby="consulta-title">
@@ -264,7 +275,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
             </button>
           </div>
           <p id="consulta-help" className="field-help">
-            El número CEP tiene 5 o 6 dígitos y puede iniciar con cero. Solo se admiten coincidencias exactas; no se permiten listados, comodines ni descargas.
+            {searchHelp} No se permiten listados, comodines ni descargas.
           </p>
           <div ref={turnstileElement} className="turnstile" aria-label="Verificación anti-bots" />
           {formAlert ? <p className="form-alert" role="alert">{formAlert}</p> : null}
@@ -322,8 +333,11 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
       </section> : null}
 
       <aside className="disclaimer" aria-label="Información de la demostración">
-        <strong>{brand.disclaimer}</strong>
-        <span>La producción incorporará controles Turnstile, rate limiting y una proyección pública validada.</span>
+        <span className="disclaimer-icon" aria-hidden="true">i</span>
+        <div>
+          <strong>{brand.disclaimer}</strong>
+          <span>El padrón de esta demo es sintético. La producción incorpora validación de seguridad y una proyección pública controlada.</span>
+        </div>
       </aside>
 
       <footer className="footer">
