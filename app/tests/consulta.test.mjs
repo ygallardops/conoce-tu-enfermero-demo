@@ -46,6 +46,27 @@ test("solo habilita iframe para origenes HTTPS explicitamente aprobados", async 
   assert.equal(response.headers.get("x-frame-options"), null);
 });
 
+test("aplica cabeceras de seguridad a los assets estáticos", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("asset-test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const response = await worker.fetch(
+    new Request("http://localhost/_next/static/app.js"),
+    {
+      ASSETS: {
+        fetch: async () => new Response("console.log('asset')", { headers: { "content-type": "text/javascript" } }),
+      },
+    },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000; includeSubDomains");
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("cross-origin-resource-policy"), "same-origin");
+  assert.doesNotMatch(response.headers.get("content-security-policy") ?? "", /unsafe-inline/);
+});
+
 test("renderiza la consulta pública y elimina el starter", async () => {
   const response = await render();
   const html = await response.text();
@@ -64,7 +85,7 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.match(csp, /challenges\.cloudflare\.com/);
   assert.doesNotMatch(csp, /unsafe-inline/);
   assert.ok(nonce);
-  assert.match(html, new RegExp(`nonce="${nonce}"`));
+  assert.ok(html.includes(`nonce="${nonce}"`));
   const inlineScripts = [...html.matchAll(/<script(?![^>]*\bsrc=)([^>]*)>/g)];
   assert.ok(inlineScripts.length > 0);
   assert.ok(inlineScripts.every((script) => script[1].includes(`nonce="${nonce}"`)));
