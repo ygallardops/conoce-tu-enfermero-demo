@@ -79,9 +79,9 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.match(layout, /metadataBase/);
   assert.match(layout, /openGraph/);
   assert.match(layout, /summary_large_image/);
-  assert.match(layout, /og\.png/);
-  assert.match(layout, /image\/png/);
-  assert.match(layout, /20260810-2/);
+  assert.match(layout, /og-card\.jpg/);
+  assert.match(layout, /image\/jpeg/);
+  assert.match(layout, /20260810-3/);
   assert.match(layout, /Conoce a tu Enfermera\(o\)/);
   assert.doesNotMatch(client, /hero-promises|Sin registro|Coincidencia exacta/);
   assert.doesNotMatch(client, /style=\{/);
@@ -93,9 +93,10 @@ test("renderiza la consulta pública y elimina el starter", async () => {
 });
 
 test("publica una imagen social propia para vistas previas", async () => {
-  const image = await stat(new URL("../public/og.png", import.meta.url));
+  const image = await stat(new URL("../public/og-card.jpg", import.meta.url));
 
-  assert.ok(image.size > 100_000);
+  assert.ok(image.size > 20_000);
+  assert.ok(image.size < 300_000);
 });
 
 test("mantiene alineados los contratos del número CEP y el hosting", async () => {
