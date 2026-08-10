@@ -23,7 +23,7 @@ jobs:
         working-directory: app
     steps:
       - name: Obtener código
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Configurar Node.js
@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Obtener código
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Bloquear vulnerabilidades altas o críticas nuevas
@@ -68,7 +68,7 @@ jobs:
       security-events: write
     steps:
       - name: Obtener código
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Inicializar CodeQL
