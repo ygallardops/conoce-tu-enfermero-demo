@@ -58,3 +58,18 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.match(client, /scrollIntoView/);
   assert.match(client, /tabIndex=\{-1\}/);
 });
+
+test("mantiene alineados los contratos del número CEP y el hosting", async () => {
+  const [schemaText, openapi, hostingText] = await Promise.all([
+    readFile(new URL("../../contracts/padron-snapshot.schema.json", import.meta.url), "utf8"),
+    readFile(new URL("../../openapi/consulta-api.yaml", import.meta.url), "utf8"),
+    readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
+  ]);
+  const schema = JSON.parse(schemaText);
+  const hosting = JSON.parse(hostingText);
+
+  assert.equal(schema.$defs.public_record.properties.num_cep.pattern, "^[0-9]{5,6}$");
+  assert.match(openapi, /pattern: '\^\[0-9\]\{5,6\}\$'/);
+  assert.equal(hosting.d1, "DB");
+  assert.equal("r2" in hosting, false);
+});

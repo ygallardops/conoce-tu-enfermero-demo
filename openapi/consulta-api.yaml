@@ -27,27 +27,47 @@ paths:
                 $ref: '#/components/schemas/ConsultaResponse'
         '400':
           description: Entrada inválida
-        '429':
-          description: Límite temporal excedido
+        '403':
+          description: Verificación Turnstile ausente, inválida o expirada
+        '503':
+          description: Proyección pública temporalmente no disponible
 components:
   schemas:
     ConsultaRequest:
+      oneOf:
+        - $ref: '#/components/schemas/ConsultaCepRequest'
+        - $ref: '#/components/schemas/ConsultaNombreRequest'
+    ConsultaCepRequest:
       type: object
       additionalProperties: false
       required: [tipo, valor, turnstile_token]
       properties:
         tipo:
+          const: cep
+        valor:
           type: string
-          enum: [cep, nombre]
+          pattern: '^[0-9]{5,6}$'
+          description: Número CEP exacto de 5 o 6 dígitos; conserva ceros iniciales.
+        turnstile_token:
+          $ref: '#/components/schemas/TurnstileToken'
+    ConsultaNombreRequest:
+      type: object
+      additionalProperties: false
+      required: [tipo, valor, turnstile_token]
+      properties:
+        tipo:
+          const: nombre
         valor:
           type: string
           minLength: 3
           maxLength: 160
-          description: Valor exacto; no admite comodines.
+          description: Nombre completo exacto; no admite comodines.
         turnstile_token:
-          type: string
-          minLength: 1
-          maxLength: 4096
+          $ref: '#/components/schemas/TurnstileToken'
+    TurnstileToken:
+      type: string
+      minLength: 1
+      maxLength: 4096
     ConsultaResponse:
       type: object
       additionalProperties: false
@@ -81,8 +101,7 @@ components:
       properties:
         num_cep:
           type: string
-          minLength: 1
-          maxLength: 20
+          pattern: '^[0-9]{5,6}$'
         nombres_completos:
           type: string
           minLength: 3

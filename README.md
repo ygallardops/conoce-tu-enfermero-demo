@@ -2,10 +2,10 @@
 
 Reemplazo serverless y seguro del validador público de colegiatura y habilidad del Colegio de Enfermeros del Perú. El proyecto demuestra arquitectura Cloudflare, aislamiento de datos y DevSecOps Lean para una entidad con equipo técnico y presupuesto reducidos.
 
-> Estado: Iteración 1 completada localmente. Todos los registros incluidos son sintéticos; este repositorio no emite verificaciones oficiales ni se encuentra desplegado.
+> Estado: Iteración 1 desplegada como demostración pública. Todos los registros son sintéticos y el servicio no emite verificaciones oficiales.
 
-Repositorio previsto: `conoce-tu-enfermero-demo`
-Demo prevista: `https://enfermeros-demo.yersongallardo.com`
+Repositorio: `conoce-tu-enfermero-demo`
+Demo: `https://enfermeros-demo.yersongallardo.com`
 
 ## Qué resuelve
 
@@ -17,7 +17,7 @@ Demo prevista: `https://enfermeros-demo.yersongallardo.com`
 
 ## Stack
 
-- Cloudflare Pages/Workers, D1, R2, WAF y Turnstile.
+- Cloudflare Workers, D1 y Turnstile. R2 y reglas personalizadas de WAF/rate limiting permanecen fuera del despliegue actual.
 - TypeScript, React, vinext, Drizzle ORM y SQLite/D1.
 - pnpm y Node.js 22.
 - GitHub Actions, CodeQL, Dependency Review, Dependabot, secret scanning y OWASP ZAP.
@@ -41,7 +41,7 @@ pnpm run test
 
 ## DevSecOps
 
-Cada push o pull request ejecuta generación/verificación de datos, lint, pruebas, build, auditoría de dependencias, Dependency Review y CodeQL. OWASP ZAP queda condicionado a la variable `DEMO_BASE_URL` para analizar el entorno publicado sin romper el pipeline antes del primer despliegue.
+Cada push o pull request ejecuta generación/verificación de datos, lint, pruebas, build, auditoría de dependencias, Dependency Review y CodeQL. OWASP ZAP Baseline analiza semanalmente el dominio demo y también puede ejecutarse manualmente; una variable `DEMO_BASE_URL` permite reemplazar el destino predeterminado.
 
 ## Identidad y uso de marca
 

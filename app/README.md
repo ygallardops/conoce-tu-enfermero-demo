@@ -29,17 +29,19 @@ snapshot sintético cuando no existe un snapshot activo. La UI permite solo
 consultas exactas por número CEP o nombre completo, devuelve como máximo cinco
 coincidencias y no ofrece listados ni exportaciones.
 
-El token de Turnstile es un marcador local para conservar el contrato de la
-API. La verificación real se habilitará exclusivamente al desplegar el dominio
-demo, con las credenciales fuera del repositorio.
+En local se usa un marcador de Turnstile para conservar el contrato de la API.
+En el dominio demo, el widget administrado se verifica en el servidor y su
+secreto permanece exclusivamente en los secretos del Worker.
 
 La identidad visual se selecciona durante el build con `PUBLIC_BRAND_PROFILE`:
 `demo` (predeterminado) o `cep-preview` (solo pruebas autorizadas). El perfil
 `demo` es siempre el valor seguro ante una configuración desconocida.
 
-## Bindings previstos
+## Bindings activos
 
 - `DB`: D1, proyección pública de solo lectura para consultas.
-- `PHOTOS`: R2, fotografías públicas administradas cuando se active esa modalidad.
+
+R2 no está declarado ni habilitado. Si se autoriza posteriormente para
+fotografías, deberá evaluarse y documentarse antes de añadir el binding.
 
 El MVP no usa login, RENIEC/PIDE, OTP, correo, Redis ni Keycloak.
