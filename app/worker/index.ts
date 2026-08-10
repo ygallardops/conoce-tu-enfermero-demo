@@ -58,10 +58,6 @@ function requestWithCsp(request: Request, csp: string): Request {
   return new Request(request, { headers });
 }
 
-function isStaticAssetPath(pathname: string): boolean {
-  return pathname.startsWith("/_next/") || ["/og.png", "/robots.txt", "/vinext-client-entry-manifest.json"].includes(pathname);
-}
-
 function withSecurityHeaders(response: Response, env: Env, csp: string): Response {
   const headers = new Headers(response.headers);
   const frameAncestors = approvedFrameAncestors(env.ALLOWED_FRAME_ANCESTORS);
@@ -112,13 +108,6 @@ const worker = {
     const url = new URL(request.url);
     const nonce = createCspNonce();
     const csp = contentSecurityPolicy(env, nonce);
-
-    // `run_worker_first` lets this Worker attach security headers to assets.
-    // Vinext's server handler does not serve these files after that routing
-    // change, so delegate known public assets to the ASSETS binding directly.
-    if (isStaticAssetPath(url.pathname)) {
-      return withSecurityHeaders(await env.ASSETS.fetch(request), env, csp);
-    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];

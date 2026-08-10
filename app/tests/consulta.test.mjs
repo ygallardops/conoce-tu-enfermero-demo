@@ -46,27 +46,6 @@ test("solo habilita iframe para origenes HTTPS explicitamente aprobados", async 
   assert.equal(response.headers.get("x-frame-options"), null);
 });
 
-test("aplica cabeceras de seguridad a los assets estáticos", async () => {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("asset-test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-  const response = await worker.fetch(
-    new Request("http://localhost/_next/static/app.js"),
-    {
-      ASSETS: {
-        fetch: async () => new Response("console.log('asset')", { headers: { "content-type": "text/javascript" } }),
-      },
-    },
-    { waitUntil() {}, passThroughOnException() {} },
-  );
-
-  assert.equal(response.status, 200);
-  assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000; includeSubDomains");
-  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
-  assert.equal(response.headers.get("cross-origin-resource-policy"), "same-origin");
-  assert.doesNotMatch(response.headers.get("content-security-policy") ?? "", /unsafe-inline/);
-});
-
 test("renderiza la consulta pública y elimina el starter", async () => {
   const response = await render();
   const html = await response.text();
@@ -120,11 +99,12 @@ test("publica una imagen social propia para vistas previas", async () => {
 });
 
 test("mantiene alineados los contratos del número CEP y el hosting", async () => {
-  const [schemaText, openapi, hostingText, wranglerText] = await Promise.all([
+  const [schemaText, openapi, hostingText, wranglerText, assetHeaders] = await Promise.all([
     readFile(new URL("../../contracts/padron-snapshot.schema.json", import.meta.url), "utf8"),
     readFile(new URL("../../openapi/consulta-api.yaml", import.meta.url), "utf8"),
     readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
     readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+    readFile(new URL("../public/_headers", import.meta.url), "utf8"),
   ]);
   const schema = JSON.parse(schemaText);
   const hosting = JSON.parse(hostingText);
@@ -133,7 +113,9 @@ test("mantiene alineados los contratos del número CEP y el hosting", async () =
   assert.match(openapi, /pattern: '\^\[0-9\]\{5,6\}\$'/);
   assert.equal(hosting.d1, "DB");
   assert.equal("r2" in hosting, false);
-  assert.match(wranglerText, /"run_worker_first": true/);
+  assert.doesNotMatch(wranglerText, /run_worker_first/);
+  assert.match(assetHeaders, /Strict-Transport-Security/);
+  assert.match(assetHeaders, /Content-Security-Policy: default-src 'none'/);
 });
 
 test("publica el padron desde staging sin reescribir una version", async () => {
