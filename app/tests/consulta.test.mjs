@@ -58,8 +58,16 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("x-content-type-options"), "nosniff");
   assert.equal(response.headers.get("x-frame-options"), "DENY");
-  assert.match(response.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
-  assert.match(response.headers.get("content-security-policy") ?? "", /challenges\.cloudflare\.com/);
+  const csp = response.headers.get("content-security-policy") ?? "";
+  const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
+  assert.match(csp, /frame-ancestors 'none'/);
+  assert.match(csp, /challenges\.cloudflare\.com/);
+  assert.doesNotMatch(csp, /unsafe-inline/);
+  assert.ok(nonce);
+  assert.match(html, new RegExp(`nonce="${nonce}"`));
+  const inlineScripts = [...html.matchAll(/<script(?![^>]*\bsrc=)([^>]*)>/g)];
+  assert.ok(inlineScripts.length > 0);
+  assert.ok(inlineScripts.every((script) => script[1].includes(`nonce="${nonce}"`)));
   assert.equal(response.headers.get("referrer-policy"), "no-referrer");
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.match(html, /Conoce a tu Enfermero/);
@@ -72,8 +80,11 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.match(layout, /openGraph/);
   assert.match(layout, /summary_large_image/);
   assert.match(layout, /og\.png/);
+  assert.match(layout, /image\/png/);
+  assert.match(layout, /20260810-2/);
   assert.match(layout, /Conoce a tu Enfermera\(o\)/);
   assert.doesNotMatch(client, /hero-promises|Sin registro|Coincidencia exacta/);
+  assert.doesNotMatch(client, /style=\{/);
   assert.match(client, /turnstile\?\.reset/);
   assert.match(client, /setTurnstileToken\(""\)/);
   assert.match(client, /resultsHeading\.current\.focus\(\{ preventScroll: true \}\)/);
@@ -88,10 +99,11 @@ test("publica una imagen social propia para vistas previas", async () => {
 });
 
 test("mantiene alineados los contratos del número CEP y el hosting", async () => {
-  const [schemaText, openapi, hostingText] = await Promise.all([
+  const [schemaText, openapi, hostingText, wranglerText] = await Promise.all([
     readFile(new URL("../../contracts/padron-snapshot.schema.json", import.meta.url), "utf8"),
     readFile(new URL("../../openapi/consulta-api.yaml", import.meta.url), "utf8"),
     readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
+    readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
   ]);
   const schema = JSON.parse(schemaText);
   const hosting = JSON.parse(hostingText);
@@ -100,6 +112,7 @@ test("mantiene alineados los contratos del número CEP y el hosting", async () =
   assert.match(openapi, /pattern: '\^\[0-9\]\{5,6\}\$'/);
   assert.equal(hosting.d1, "DB");
   assert.equal("r2" in hosting, false);
+  assert.match(wranglerText, /"run_worker_first": true/);
 });
 
 test("publica el padron desde staging sin reescribir una version", async () => {

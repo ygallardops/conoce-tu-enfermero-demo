@@ -7,7 +7,8 @@ body { min-width: 320px; margin: 0; background: var(--surface); color: var(--ink
 button, input { font: inherit; }
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
-.site-shell { min-height: 100vh; background: var(--surface); }
+.site-shell { --brand-primary: #168fbb; --brand-primary-dark: #18355f; min-height: 100vh; background: var(--surface); }
+.site-shell[data-brand-profile="cep-preview"] { --brand-primary: #19a7d8; --brand-primary-dark: #18355f; }
 .hero, .consultation-card, .results, .disclaimer, .footer { width: min(100% - 2rem, 64rem); margin-inline: auto; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; padding: 1rem max(1rem, calc((100vw - 70rem) / 2)); background: var(--brand-primary-dark); color: white; }
 .brand { display: inline-flex; align-items: center; gap: .75rem; color: inherit; text-decoration: none; }

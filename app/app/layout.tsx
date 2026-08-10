@@ -11,13 +11,13 @@ const shareMetadata: Metadata = {
     siteName: "Conoce a tu Enfermera(o) — Demo",
     title: "Conoce a tu Enfermera(o)",
     description: "Consulta demostrativa de colegiatura y habilidad con datos sintéticos.",
-    images: [{ url: "/og.png", width: 1730, height: 910, alt: "Conoce a tu Enfermera(o): demo con datos sintéticos." }],
+    images: [{ url: "/og.png?v=20260810-2", width: 1730, height: 910, type: "image/png", alt: "Conoce a tu Enfermera(o): demo con datos sintéticos." }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Conoce a tu Enfermera(o)",
     description: "Consulta demostrativa de colegiatura y habilidad con datos sintéticos.",
-    images: ["/og.png"],
+    images: ["/og.png?v=20260810-2"],
   },
 };
 

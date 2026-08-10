@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, FormEvent } from "react";
+import type { FormEvent } from "react";
 import type { BrandProfile } from "@/lib/brand";
 
 type SearchType = "cep" | "nombre";
@@ -202,15 +202,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
   }
 
   return (
-    <main
-      className="site-shell"
-      style={
-        {
-          "--brand-primary": brand.tokens.primary,
-          "--brand-primary-dark": brand.tokens.primaryDark,
-        } as CSSProperties
-      }
-    >
+    <main className="site-shell" data-brand-profile={brand.id}>
       <header className="topbar">
         <a className="brand" href="#consulta" aria-label={`${brand.productName}, ir a la consulta`}>
           <span className="brand-mark" aria-hidden="true">ED</span>

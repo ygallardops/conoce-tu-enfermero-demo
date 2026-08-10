@@ -25,31 +25,45 @@ function approvedFrameAncestors(value?: string): string {
   return origins.length > 0 ? origins.join(" ") : "'none'";
 }
 
-function withSecurityHeaders(response: Response, env: Env): Response {
+function createCspNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes));
+}
+
+function contentSecurityPolicy(env: Env, nonce: string): string {
+  const frameAncestors = approvedFrameAncestors(env.ALLOWED_FRAME_ANCESTORS);
+
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    `script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com`,
+    `style-src 'self' 'nonce-${nonce}'`,
+    "style-src-attr 'none'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "connect-src 'self' https://challenges.cloudflare.com",
+    "frame-src https://challenges.cloudflare.com",
+    "form-action 'self'",
+    `frame-ancestors ${frameAncestors}`,
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
+
+function requestWithCsp(request: Request, csp: string): Request {
+  const headers = new Headers(request.headers);
+  // Vinext reads the request CSP and propagates its nonce to bootstrap tags.
+  headers.set("content-security-policy", csp);
+  return new Request(request, { headers });
+}
+
+function withSecurityHeaders(response: Response, env: Env, csp: string): Response {
   const headers = new Headers(response.headers);
   const frameAncestors = approvedFrameAncestors(env.ALLOWED_FRAME_ANCESTORS);
   const contentType = headers.get("content-type") ?? "";
 
-  // Vinext emits small inline bootstrap fragments, therefore unsafe-inline is
-  // deliberately scoped to scripts and styles until a nonce-capable renderer is
-  // introduced. External executable content remains limited to Turnstile.
-  headers.set(
-    "content-security-policy",
-    [
-      "default-src 'self'",
-      "base-uri 'self'",
-      "object-src 'none'",
-      "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data:",
-      "font-src 'self'",
-      "connect-src 'self' https://challenges.cloudflare.com",
-      "frame-src https://challenges.cloudflare.com",
-      "form-action 'self'",
-      `frame-ancestors ${frameAncestors}`,
-      "upgrade-insecure-requests",
-    ].join("; "),
-  );
+  headers.set("content-security-policy", csp);
   headers.set("permissions-policy", "camera=(), geolocation=(), microphone=(), payment=()");
   headers.set("referrer-policy", "no-referrer");
   headers.set("x-content-type-options", "nosniff");
@@ -92,6 +106,8 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const nonce = createCspNonce();
+    const csp = contentSecurityPolicy(env, nonce);
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
@@ -102,10 +118,10 @@ const worker = {
           return result.response();
         },
       }, allowedWidths);
-      return withSecurityHeaders(response, env);
+      return withSecurityHeaders(response, env, csp);
     }
 
-    return withSecurityHeaders(await handler.fetch(request, env, ctx), env);
+    return withSecurityHeaders(await handler.fetch(requestWithCsp(request, csp), env, ctx), env, csp);
   },
 };
 
