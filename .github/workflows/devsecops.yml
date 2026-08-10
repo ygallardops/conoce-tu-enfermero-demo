@@ -55,7 +55,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Bloquear vulnerabilidades altas o críticas nuevas
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high
 
@@ -81,4 +81,3 @@ jobs:
         uses: github/codeql-action/analyze@v4
         with:
           category: /language:javascript-typescript
-
