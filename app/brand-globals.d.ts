@@ -4,5 +4,6 @@ declare const __TURNSTILE_SITE_KEY__: string;
 interface Window {
   turnstile?: {
     render: (element: HTMLElement, options: Record<string, unknown>) => string;
+    reset: (widgetId?: string) => void;
   };
 }

@@ -75,17 +75,22 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
   const [formAlert, setFormAlert] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileElement = useRef<HTMLDivElement>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!__TURNSTILE_SITE_KEY__ || !turnstileElement.current) return;
-    const render = () => window.turnstile?.render(turnstileElement.current!, {
-      sitekey: __TURNSTILE_SITE_KEY__,
-      callback: (token) => {
-        setTurnstileToken(token);
-        setFormAlert(null);
-      },
-      "expired-callback": () => setTurnstileToken(""),
-    });
+    const render = () => {
+      if (!window.turnstile || turnstileWidgetId.current) return;
+      turnstileWidgetId.current = window.turnstile.render(turnstileElement.current!, {
+        sitekey: __TURNSTILE_SITE_KEY__,
+        callback: (token: string) => {
+          setTurnstileToken(token);
+          setFormAlert(null);
+        },
+        "expired-callback": () => setTurnstileToken(""),
+        "error-callback": () => setTurnstileToken(""),
+      });
+    };
     const existing = document.querySelector('script[src^="https://challenges.cloudflare.com/turnstile"]');
     if (existing) { render(); return; }
     const script = document.createElement("script");
@@ -100,8 +105,8 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
     [searchType],
   );
   const searchHelp = searchType === "cep"
-    ? "Ingresa 5 o 6 dígitos. Puede iniciar con cero; la coincidencia es exacta."
-    : "Ingresa el nombre completo tal como aparece en el padrón. La coincidencia es exacta.";
+    ? "Usa 5 o 6 dígitos; puede iniciar con cero."
+    : "Escribe el nombre completo tal como aparece en el padrón.";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -165,6 +170,10 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
       );
     } finally {
       setIsLoading(false);
+      if (__TURNSTILE_SITE_KEY__) {
+        setTurnstileToken("");
+        window.turnstile?.reset(turnstileWidgetId.current ?? undefined);
+      }
     }
   }
 
@@ -201,30 +210,14 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
       </header>
 
       <section className="hero" aria-labelledby="page-title">
-        <div className="hero-kicker">
-          <span className="eyebrow">Consulta ciudadana</span>
-          <span className="hero-demo-note">Datos de demostración</span>
-        </div>
-        <h1 id="page-title">Verifica la habilitación de un profesional de enfermería.</h1>
+        <p className="eyebrow">Consulta pública de colegiatura</p>
+        <h1 id="page-title">Consulta a un profesional de enfermería</h1>
         <p className="hero-copy">
-          Consulta por número CEP o nombre completo. La respuesta es puntual, no requiere registro y no constituye una constancia oficial.
+          Busca por número CEP o nombre completo.
         </p>
-        <ul className="hero-promises" aria-label="Características de la consulta">
-          <li>Sin registro</li>
-          <li>Coincidencia exacta</li>
-          <li>Hasta 5 resultados</li>
-        </ul>
       </section>
 
-      <section id="consulta" className="consultation-card" aria-labelledby="consulta-title">
-        <div className="consultation-heading">
-          <div>
-            <p className="eyebrow">Consulta pública</p>
-            <h2 id="consulta-title">Consulta a un profesional</h2>
-          </div>
-          <span className="limit-note">Máximo 5 resultados</span>
-        </div>
-
+      <section id="consulta" className="consultation-card" aria-label="Formulario de consulta">
         <form onSubmit={handleSubmit} noValidate>
           <fieldset className="search-type" aria-label="Tipo de consulta">
             <legend>Buscar por</legend>
@@ -275,7 +268,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
             </button>
           </div>
           <p id="consulta-help" className="field-help">
-            {searchHelp} No se permiten listados, comodines ni descargas.
+            {searchHelp}
           </p>
           <div ref={turnstileElement} className="turnstile" aria-label="Verificación anti-bots" />
           {formAlert ? <p className="form-alert" role="alert">{formAlert}</p> : null}
@@ -284,10 +277,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
 
       {hasSearched ? <section className="results" aria-labelledby="resultados-title">
         <div className="results-heading">
-          <div>
-            <p className="eyebrow">Resultado de la consulta</p>
-            <h2 id="resultados-title">Estado de colegiatura</h2>
-          </div>
+          <h2 id="resultados-title">Resultado</h2>
           {updatedAt ? <span className="updated-at">Datos actualizados: {formatDate(updatedAt)}</span> : null}
         </div>
 
@@ -334,15 +324,11 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
 
       <aside className="disclaimer" aria-label="Información de la demostración">
         <span className="disclaimer-icon" aria-hidden="true">i</span>
-        <div>
-          <strong>{brand.disclaimer}</strong>
-          <span>El padrón de esta demo es sintético. La producción incorpora validación de seguridad y una proyección pública controlada.</span>
-        </div>
+        <strong>{brand.disclaimer}</strong>
       </aside>
 
       <footer className="footer">
         <span>{brand.productName}</span>
-        <span>Arquitectura serverless · Consulta sin registro</span>
       </footer>
     </main>
   );

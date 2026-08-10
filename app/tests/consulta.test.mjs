@@ -38,9 +38,10 @@ test("normaliza la búsqueda y rechaza comodines", () => {
 test("renderiza la consulta pública y elimina el starter", async () => {
   const response = await render();
   const html = await response.text();
-  const [page, layout] = await Promise.all([
+  const [page, layout, client] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/ConsultaClient.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.equal(response.status, 200);
@@ -50,4 +51,7 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.doesNotMatch(html, /Your site is taking shape|Building your site|codex-preview/i);
   assert.match(page, /ConsultaClient/);
   assert.match(layout, /lang="es-PE"/);
+  assert.doesNotMatch(client, /hero-promises|Sin registro|Coincidencia exacta/);
+  assert.match(client, /turnstile\?\.reset/);
+  assert.match(client, /setTurnstileToken\(""\)/);
 });
