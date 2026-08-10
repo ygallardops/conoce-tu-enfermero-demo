@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 import { normalizeSearchValue, validateConsultaPayload } from "../lib/consulta.mjs";
 
@@ -68,12 +68,23 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.doesNotMatch(html, /Your site is taking shape|Building your site|codex-preview/i);
   assert.match(page, /ConsultaClient/);
   assert.match(layout, /lang="es-PE"/);
+  assert.match(layout, /metadataBase/);
+  assert.match(layout, /openGraph/);
+  assert.match(layout, /summary_large_image/);
+  assert.match(layout, /og\.png/);
+  assert.match(layout, /Conoce a tu Enfermera\(o\)/);
   assert.doesNotMatch(client, /hero-promises|Sin registro|Coincidencia exacta/);
   assert.match(client, /turnstile\?\.reset/);
   assert.match(client, /setTurnstileToken\(""\)/);
   assert.match(client, /resultsHeading\.current\.focus\(\{ preventScroll: true \}\)/);
   assert.match(client, /scrollIntoView/);
   assert.match(client, /tabIndex=\{-1\}/);
+});
+
+test("publica una imagen social propia para vistas previas", async () => {
+  const image = await stat(new URL("../public/og.png", import.meta.url));
+
+  assert.ok(image.size > 100_000);
 });
 
 test("mantiene alineados los contratos del número CEP y el hosting", async () => {
