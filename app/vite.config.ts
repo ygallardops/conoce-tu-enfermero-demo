@@ -8,7 +8,11 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
 
 const { d1, r2 } = hostingConfig;
 const brandProfile = process.env.PUBLIC_BRAND_PROFILE ?? "demo";
-const turnstileSiteKey = process.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
+// A Turnstile site key is public configuration, unlike the server-side secret.
+// Keep the demo key as a build fallback so an ad-hoc production build cannot
+// silently omit the human-verification widget when no local .env is loaded.
+const turnstileSiteKey =
+  process.env.PUBLIC_TURNSTILE_SITE_KEY ?? "0x4AAAAAAELgOttEQExh7l1W";
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
