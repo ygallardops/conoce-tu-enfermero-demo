@@ -3,14 +3,14 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { normalizeSearchValue, validateConsultaPayload } from "../lib/consulta.mjs";
 
-async function render() {
+async function render(overrides = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
     new Request("http://localhost/", { headers: { accept: "text/html" } }),
-    { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
+    { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) }, ...overrides },
     { waitUntil() {}, passThroughOnException() {} },
   );
 }
@@ -35,6 +35,17 @@ test("normaliza la búsqueda y rechaza comodines", () => {
   );
 });
 
+test("solo habilita iframe para origenes HTTPS explicitamente aprobados", async () => {
+  const response = await render({
+    ALLOWED_FRAME_ANCESTORS: "https://www.cep.org.pe, http://inseguro.example, *.example.org",
+  });
+  const csp = response.headers.get("content-security-policy") ?? "";
+
+  assert.match(csp, /frame-ancestors https:\/\/www\.cep\.org\.pe/);
+  assert.doesNotMatch(csp, /inseguro|\*\.example/);
+  assert.equal(response.headers.get("x-frame-options"), null);
+});
+
 test("renderiza la consulta pública y elimina el starter", async () => {
   const response = await render();
   const html = await response.text();
@@ -45,6 +56,11 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   ]);
 
   assert.equal(response.status, 200);
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
+  assert.match(response.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
+  assert.match(response.headers.get("content-security-policy") ?? "", /challenges\.cloudflare\.com/);
+  assert.equal(response.headers.get("referrer-policy"), "no-referrer");
   assert.match(html, /Conoce a tu Enfermero/);
   assert.match(html, /Prototipo personal no oficial/);
   assert.match(html, /Número CEP/);
@@ -72,4 +88,20 @@ test("mantiene alineados los contratos del número CEP y el hosting", async () =
   assert.match(openapi, /pattern: '\^\[0-9\]\{5,6\}\$'/);
   assert.equal(hosting.d1, "DB");
   assert.equal("r2" in hosting, false);
+});
+
+test("publica el padron desde staging sin reescribir una version", async () => {
+  const source = await readFile(new URL("../lib/padron.ts", import.meta.url), "utf8");
+
+  assert.match(source, /status = 'staging'/);
+  assert.match(source, /status = 'retired'/);
+  assert.match(source, /status = 'active'/);
+  assert.match(source, /snapshot activo no coincide con la version canonica/i);
+});
+
+test("la API devuelve un identificador de soporte sin exponer la consulta", async () => {
+  const source = await readFile(new URL("../app/api/v1/consulta/route.ts", import.meta.url), "utf8");
+
+  assert.match(source, /"x-request-id": requestId/);
+  assert.doesNotMatch(source, /console\.(log|info|warn|error)/);
 });

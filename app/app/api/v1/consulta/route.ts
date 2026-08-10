@@ -2,11 +2,14 @@ import { env } from "cloudflare:workers";
 import { ensureDemoSnapshot, queryPublicRegistry } from "@/lib/padron";
 import { validateConsultaPayload } from "@/lib/consulta.mjs";
 
-const responseHeaders = {
-  "cache-control": "no-store",
-  "content-type": "application/json; charset=utf-8",
-  "x-content-type-options": "nosniff",
-};
+function responseHeaders(requestId: string) {
+  return {
+    "cache-control": "no-store",
+    "content-type": "application/json; charset=utf-8",
+    "x-content-type-options": "nosniff",
+    "x-request-id": requestId,
+  };
+}
 
 async function verifyTurnstile(token: string, request: Request) {
   const secret = (env as typeof env & { TURNSTILE_SECRET_KEY?: string }).TURNSTILE_SECRET_KEY;
@@ -24,7 +27,7 @@ async function verifyTurnstile(token: string, request: Request) {
 function errorResponse(requestId: string, status: number, message: string) {
   return Response.json(
     { request_id: requestId, error: { message } },
-    { status, headers: responseHeaders },
+    { status, headers: responseHeaders(requestId) },
   );
 }
 
@@ -61,7 +64,7 @@ export async function POST(request: Request) {
         total: results.length,
         datos_actualizados_al: updatedAt,
       },
-      { headers: responseHeaders },
+      { headers: responseHeaders(requestId) },
     );
   } catch {
     // Do not include query contents or internal database details in a response.
@@ -70,8 +73,9 @@ export async function POST(request: Request) {
 }
 
 export function GET() {
+  const requestId = crypto.randomUUID();
   return new Response(null, {
     status: 405,
-    headers: { ...responseHeaders, allow: "POST" },
+    headers: { ...responseHeaders(requestId), allow: "POST" },
   });
 }

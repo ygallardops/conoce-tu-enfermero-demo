@@ -37,6 +37,20 @@ La identidad visual se selecciona durante el build con `PUBLIC_BRAND_PROFILE`:
 `demo` (predeterminado) o `cep-preview` (solo pruebas autorizadas). El perfil
 `demo` es siempre el valor seguro ante una configuración desconocida.
 
+## Iteracion 2 en curso
+
+El Worker aplica cabeceras de seguridad a todas las respuestas, incluyendo CSP,
+HSTS, proteccion contra MIME sniffing y politicas de permisos y referencias.
+La demostracion no permite iframes por defecto; una integracion institucional
+debe configurar de forma explicita sus origenes HTTPS autorizados.
+
+La API aporta un identificador aleatorio de soporte por respuesta sin registrar
+los datos de consulta. La proyeccion D1 se publica desde `staging` y solo
+activa un snapshot completo.
+
+Las reglas administradas de WAF/rate limiting no estan habilitadas en esta demo:
+requieren medir trafico y confirmar disponibilidad en el plan de Cloudflare.
+
 ## Bindings activos
 
 - `DB`: D1, proyección pública de solo lectura para consultas.

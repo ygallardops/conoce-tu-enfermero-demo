@@ -53,10 +53,18 @@ const schemaStatements = [
 export async function ensureDemoSnapshot(db: D1Database): Promise<string> {
   await db.batch(schemaStatements.map((statement) => db.prepare(statement)));
   const existing = await db
-    .prepare("SELECT checksum_sha256 FROM padron_snapshots WHERE dataset_version = ?")
+    .prepare("SELECT checksum_sha256, status FROM padron_snapshots WHERE dataset_version = ?")
     .bind(demoSnapshot.dataset_version)
-    .first<{ checksum_sha256: string }>();
-  if (existing?.checksum_sha256 === demoSnapshot.checksum_sha256) return demoSnapshot.generated_at;
+    .first<{ checksum_sha256: string; status: string }>();
+  if (existing?.checksum_sha256 === demoSnapshot.checksum_sha256 && existing.status === "active") {
+    return demoSnapshot.generated_at;
+  }
+
+  // A version is immutable. The ingesta must publish a new dataset_version
+  // instead of overwriting an already traceable public snapshot.
+  if (existing && existing.checksum_sha256 !== demoSnapshot.checksum_sha256) {
+    throw new Error("El snapshot activo no coincide con la version canonica.");
+  }
 
   const importedAt = new Date().toISOString();
   const snapshotStatement = existing
@@ -64,7 +72,7 @@ export async function ensureDemoSnapshot(db: D1Database): Promise<string> {
       .prepare(
         `UPDATE padron_snapshots SET
           schema_version = ?, generated_at = ?, source = ?, record_count = ?,
-          checksum_sha256 = ?, status = 'active', imported_at = ?
+          checksum_sha256 = ?, status = 'staging', imported_at = ?
         WHERE dataset_version = ?`,
       )
       .bind(
@@ -80,7 +88,7 @@ export async function ensureDemoSnapshot(db: D1Database): Promise<string> {
       `INSERT INTO padron_snapshots (
         dataset_version, schema_version, generated_at, source, record_count,
         checksum_sha256, status, imported_at
-      ) VALUES (?, ?, ?, ?, ?, ?, 'active', ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, 'staging', ?)`,
     )
     .bind(
       demoSnapshot.dataset_version,
@@ -114,7 +122,19 @@ export async function ensureDemoSnapshot(db: D1Database): Promise<string> {
   const resetStatements = existing
     ? [db.prepare("DELETE FROM padron_publico WHERE dataset_version = ?").bind(demoSnapshot.dataset_version)]
     : [];
-  await db.batch([...resetStatements, snapshotStatement, ...recordStatements]);
+  const activateStatements = [
+    db
+      .prepare("UPDATE padron_snapshots SET status = 'retired' WHERE status = 'active' AND dataset_version <> ?")
+      .bind(demoSnapshot.dataset_version),
+    db
+      .prepare("UPDATE padron_snapshots SET status = 'active' WHERE dataset_version = ?")
+      .bind(demoSnapshot.dataset_version),
+  ];
+
+  // D1 batch executes the staging import and activation as one transaction, so
+  // a public query observes either the previous active version or the complete
+  // new version, never a partially populated padron.
+  await db.batch([snapshotStatement, ...resetStatements, ...recordStatements, ...activateStatements]);
   return demoSnapshot.generated_at;
 }
 
