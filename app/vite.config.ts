@@ -35,7 +35,14 @@ const localBindingConfig = {
     : [],
 };
 
-export default defineConfig(async () => {
+const buildBindingConfig = {
+  ...localBindingConfig,
+  compatibility_flags: [],
+  d1_databases: [],
+  r2_buckets: [],
+};
+
+export default defineConfig(async ({ command }) => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
@@ -58,7 +65,10 @@ export default defineConfig(async () => {
       sites(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
-        config: localBindingConfig,
+        // The placeholder bindings make local development self-contained. During
+        // a production build, Wrangler must receive only the real bindings from
+        // wrangler.jsonc or it emits duplicate D1 bindings in dist/server.
+        config: command === "serve" ? localBindingConfig : buildBindingConfig,
       }),
     ],
   };
