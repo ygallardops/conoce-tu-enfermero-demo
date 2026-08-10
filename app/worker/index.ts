@@ -28,6 +28,7 @@ function approvedFrameAncestors(value?: string): string {
 function withSecurityHeaders(response: Response, env: Env): Response {
   const headers = new Headers(response.headers);
   const frameAncestors = approvedFrameAncestors(env.ALLOWED_FRAME_ANCESTORS);
+  const contentType = headers.get("content-type") ?? "";
 
   // Vinext emits small inline bootstrap fragments, therefore unsafe-inline is
   // deliberately scoped to scripts and styles until a nonce-capable renderer is
@@ -56,6 +57,13 @@ function withSecurityHeaders(response: Response, env: Env): Response {
   headers.set("cross-origin-resource-policy", "same-origin");
   headers.set("x-permitted-cross-domain-policies", "none");
   headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
+
+  // A public HTML document or JSON search response must not be retained by a
+  // shared cache. Fingerprinted JS/CSS assets retain their framework cache
+  // policy and carry no registry results.
+  if (contentType.includes("text/html") || contentType.includes("application/json")) {
+    headers.set("cache-control", "no-store");
+  }
 
   // X-Frame-Options complements the safe default. It is omitted when an
   // explicitly approved institutional iframe origin is configured because XFO

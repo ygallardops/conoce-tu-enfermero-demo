@@ -61,6 +61,7 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.match(response.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
   assert.match(response.headers.get("content-security-policy") ?? "", /challenges\.cloudflare\.com/);
   assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+  assert.equal(response.headers.get("cache-control"), "no-store");
   assert.match(html, /Conoce a tu Enfermero/);
   assert.match(html, /Prototipo personal no oficial/);
   assert.match(html, /Número CEP/);
