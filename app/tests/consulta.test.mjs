@@ -54,4 +54,7 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.doesNotMatch(client, /hero-promises|Sin registro|Coincidencia exacta/);
   assert.match(client, /turnstile\?\.reset/);
   assert.match(client, /setTurnstileToken\(""\)/);
+  assert.match(client, /resultsHeading\.current\.focus\(\{ preventScroll: true \}\)/);
+  assert.match(client, /scrollIntoView/);
+  assert.match(client, /tabIndex=\{-1\}/);
 });

@@ -76,6 +76,8 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileElement = useRef<HTMLDivElement>(null);
   const turnstileWidgetId = useRef<string | null>(null);
+  const resultsSection = useRef<HTMLElement>(null);
+  const resultsHeading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     if (!__TURNSTILE_SITE_KEY__ || !turnstileElement.current) return;
@@ -99,6 +101,17 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
     script.onload = render;
     document.head.append(script);
   }, []);
+
+  useEffect(() => {
+    if (!hasSearched || isLoading || !resultsHeading.current) return;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    resultsHeading.current.focus({ preventScroll: true });
+    resultsSection.current?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  }, [hasSearched, isLoading]);
 
   const example = useMemo(
     () => (searchType === "cep" ? "00001" : "PERSONA SINTETICA 001"),
@@ -275,9 +288,9 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
         </form>
       </section>
 
-      {hasSearched ? <section className="results" aria-labelledby="resultados-title">
+      {hasSearched ? <section ref={resultsSection} className="results" aria-labelledby="resultados-title">
         <div className="results-heading">
-          <h2 id="resultados-title">Resultado</h2>
+          <h2 ref={resultsHeading} id="resultados-title" tabIndex={-1}>Resultado</h2>
           {updatedAt ? <span className="updated-at">Datos actualizados: {formatDate(updatedAt)}</span> : null}
         </div>
 
