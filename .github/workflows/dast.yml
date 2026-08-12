@@ -25,5 +25,8 @@ jobs:
         with:
           target: ${{ env.DEMO_BASE_URL }}
           allow_issue_writing: false
-          fail_action: false
+          # Las excepciones aceptadas se versionan en .zap/rules.tsv.
+          # Cualquier alerta no exceptuada bloquea la ejecución.
+          rules_file_name: .zap/rules.tsv
+          fail_action: true
           artifact_name: zap-demo-report

@@ -1,0 +1,8 @@
+# Excepciones DAST aceptadas y revisadas el 2026-08-11.
+# Alcance: /robots.txt es servido por Cloudflare Content Signals antes del
+# Worker; no hereda los encabezados del Worker. 90004 también cubre el
+# documento HTML: no se habilita COEP porque rompería Turnstile y la
+# aplicación no necesita aislamiento cross-origin.
+90004	IGNORE	(Cross-Origin isolation headers: excepción documentada)
+10035	IGNORE	(HSTS ausente solo en robots.txt gestionado por Cloudflare)
+10021	IGNORE	(nosniff ausente solo en robots.txt gestionado por Cloudflare)
