@@ -64,8 +64,11 @@ test("renderiza la consulta pública y elimina el starter", async () => {
     .split(";")
     .map((directive) => directive.trim().split(/\s+/))
     .find(([directive]) => directive === "script-src") ?? [];
+  const scriptSourceHosts = scriptSources
+    .filter((source) => URL.canParse(source))
+    .map((source) => new URL(source).hostname);
   assert.match(csp, /frame-ancestors 'none'/);
-  assert.ok(scriptSources.includes("https://challenges.cloudflare.com"));
+  assert.deepEqual(scriptSourceHosts, ["challenges.cloudflare.com"]);
   assert.doesNotMatch(csp, /unsafe-inline/);
   assert.ok(nonce);
   assert.ok(html.includes(`nonce="${nonce}"`));
