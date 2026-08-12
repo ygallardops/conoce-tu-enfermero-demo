@@ -61,7 +61,7 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   const csp = response.headers.get("content-security-policy") ?? "";
   const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
   assert.match(csp, /frame-ancestors 'none'/);
-  assert.match(csp, /challenges\.cloudflare\.com/);
+  assert.ok(csp.includes("https://challenges.cloudflare.com"));
   assert.doesNotMatch(csp, /unsafe-inline/);
   assert.ok(nonce);
   assert.ok(html.includes(`nonce="${nonce}"`));
