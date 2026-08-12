@@ -1,61 +1,62 @@
-# Aplicación Conoce a tu Enfermero
+# Aplicación Conoce a tu Enfermera(o)
 
-Miniaplicación que sustituirá el validador legado del CEP. Esta carpeta contiene la UI/API Cloudflare, el esquema D1 y las herramientas de datos.
+Miniaplicación Cloudflare que sustituye el validador público legado sin reconstruir el portal WordPress. Esta carpeta contiene la UI, la API, el esquema D1 y las herramientas de generación y validación de datos.
 
 ## Requisitos
 
 - Node.js 22.13 o superior.
-- pnpm o npm.
+- pnpm 11.16.0, activado mediante Corepack.
 
 ## Ejecución local
 
 ```bash
-pnpm install
+corepack enable
+corepack prepare pnpm@11.16.0 --activate
+pnpm install --frozen-lockfile
 pnpm run data:demo
 pnpm run data:verify
-pnpm run db:generate
-pnpm run build
+pnpm run lint
 pnpm run test
+pnpm run dev
 ```
 
-`data:demo` crea el mismo conjunto sintético en tres formatos de origen y normaliza cada uno. `data:verify` comprueba que los checksums sean idénticos, que no haya CEP duplicados y que no aparezcan campos personales fuera del contrato público.
+`data:demo` genera el mismo padrón sintético desde tres orígenes simulados: JSON/exportación de base de datos, CSV y API/NDJSON. `data:verify` comprueba que los snapshots y checksums sean equivalentes, que no existan CEP duplicados y que no aparezcan campos personales fuera del contrato público.
 
-Los datos generados en `data/demo/` son ficticios y no representan colegiados reales.
+Los datos de `data/demo/` son ficticios y no representan colegiados reales. Puede probar la consulta con el número CEP `00001`.
 
-## Iteración 1
+## Estado funcional
 
-La ruta `POST /api/v1/consulta` inicializa una proyección D1 local con el
-snapshot sintético cuando no existe un snapshot activo. La UI permite solo
-consultas exactas por número CEP o nombre completo, devuelve como máximo cinco
-coincidencias y no ofrece listados ni exportaciones.
+La ruta `POST /api/v1/consulta` consulta exclusivamente la proyección D1 activa. Admite número CEP exacto de 5 o 6 dígitos o nombre completo normalizado, devuelve como máximo cinco coincidencias y no ofrece listados, comodines, paginación ni exportaciones.
 
-En local se usa un marcador de Turnstile para conservar el contrato de la API.
-En el dominio demo, el widget administrado se verifica en el servidor y su
-secreto permanece exclusivamente en los secretos del Worker.
+En desarrollo local se conserva el contrato de Turnstile mediante un token de demostración. En el dominio público, el widget administrado se verifica contra Cloudflare desde el servidor y `TURNSTILE_SECRET_KEY` permanece exclusivamente en los secretos del Worker.
 
-La identidad visual se selecciona durante el build con `PUBLIC_BRAND_PROFILE`:
-`demo` (predeterminado) o `cep-preview` (solo pruebas autorizadas). El perfil
-`demo` es siempre el valor seguro ante una configuración desconocida.
+La identidad se selecciona durante el build mediante `PUBLIC_BRAND_PROFILE`: `demo` es el perfil predeterminado y `cep-preview` se reserva para pruebas visuales autorizadas. Un valor desconocido vuelve de forma segura a `demo`.
 
-## Iteracion 2 en curso
+## Seguridad y operación — Iteración 2 completada
 
-El Worker aplica cabeceras de seguridad a todas las respuestas, incluyendo CSP,
-HSTS, proteccion contra MIME sniffing y politicas de permisos y referencias.
-La demostracion no permite iframes por defecto; una integracion institucional
-debe configurar de forma explicita sus origenes HTTPS autorizados.
+- El Worker aplica CSP con nonce, HSTS, `nosniff`, políticas de permisos y referencias, aislamiento de origen y `no-store` para HTML/JSON.
+- La demo deniega iframes por defecto; `ALLOWED_FRAME_ANCESTORS` acepta únicamente orígenes HTTPS explícitos.
+- La API devuelve `x-request-id` sin registrar el dato consultado ni el token Turnstile.
+- La publicación D1 usa `staging`, versión y checksum antes de activar atómicamente un snapshot completo.
+- Cloudflare Free limita la API a 5 solicitudes por 10 segundos por IP y aplica un bloqueo temporal al exceder el umbral.
+- Workers Observability está habilitado sin logs de aplicación que contengan búsquedas o tokens.
+- OWASP ZAP es bloqueante para alertas no aceptadas; CodeQL, Dependency Review, pruebas y build se ejecutan como controles del repositorio.
 
-La API aporta un identificador aleatorio de soporte por respuesta sin registrar
-los datos de consulta. La proyeccion D1 se publica desde `staging` y solo
-activa un snapshot completo.
+Las reglas WAF administradas no se habilitaron porque requieren un plan superior. Ningún recurso facturable fue necesario para completar esta iteración.
 
-Las reglas administradas de WAF/rate limiting no estan habilitadas en esta demo:
-requieren medir trafico y confirmar disponibilidad en el plan de Cloudflare.
+## Configuración
 
-## Bindings activos
+El archivo `.env.example` contiene solo configuración pública de ejemplo:
 
-- `DB`: D1, proyección pública de solo lectura para consultas.
+- `PUBLIC_BRAND_PROFILE`: `demo` o `cep-preview`.
+- `PUBLIC_TURNSTILE_SITE_KEY`: clave pública de Turnstile.
 
-R2 no está declarado ni habilitado. Si se autoriza posteriormente para
-fotografías, deberá evaluarse y documentarse antes de añadir el binding.
+Configuración de runtime:
 
-El MVP no usa login, RENIEC/PIDE, OTP, correo, Redis ni Keycloak.
+- `TURNSTILE_SECRET_KEY`: secreto del Worker; nunca debe guardarse en Git.
+- `ALLOWED_FRAME_ANCESTORS`: lista opcional, separada por comas, de orígenes HTTPS autorizados para iframe.
+- `DB`: binding D1 de la proyección pública.
+
+R2 no está declarado ni habilitado. Si posteriormente se autoriza para fotografías, deberá evaluarse y documentarse antes de añadir el binding.
+
+El MVP no usa login, RENIEC/PIDE, OTP, correo, Redis, Keycloak, Kubernetes ni microservicios.
