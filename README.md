@@ -1,62 +1,127 @@
-# Conoce a tu Enfermero
+# Conoce a tu Enfermera(o)
 
-Reemplazo serverless y seguro del validador público de colegiatura y habilidad del Colegio de Enfermeros del Perú. El proyecto demuestra arquitectura Cloudflare, aislamiento de datos y DevSecOps Lean para una entidad con equipo técnico y presupuesto reducidos.
+[![DevSecOps](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/devsecops.yml/badge.svg)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/devsecops.yml)
+[![DAST](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/dast.yml/badge.svg)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/dast.yml)
+[![Licencia MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
 
-> Estado: Iteración 2 completada y desplegada como demostración pública. Todos los registros son sintéticos y el servicio no emite verificaciones oficiales.
+Prototipo serverless y seguro para sustituir el validador público de colegiatura y habilidad del Colegio de Enfermeros del Perú (CEP). El proyecto demuestra una arquitectura Lean de bajo mantenimiento, aislamiento de datos y DevSecOps para una entidad con equipo técnico y presupuesto reducidos.
 
-Repositorio: `conoce-tu-enfermero-demo`
-Demo: `https://enfermeros-demo.yersongallardo.com`
+> **Demo personal no oficial.** La Iteración 2 está completada y desplegada. Todos los nombres, fotografías y registros son sintéticos; el servicio no consulta el padrón real ni emite verificaciones oficiales.
+
+- [Abrir la demostración](https://enfermeros-demo.yersongallardo.com/)
+- [Consultar el contrato OpenAPI](openapi/consulta-api.yaml)
+- [Revisar la política de seguridad](SECURITY.md)
 
 ## Qué resuelve
 
-- Consulta pública sin login por número CEP o nombre exacto.
-- Proyección pública aislada del padrón maestro.
-- Integración adaptable desde JSON, CSV, API o exportaciones de base de datos.
+- Consulta pública sin registro, login, DNI, RENIEC/PIDE ni creación de una base de datos de consultantes.
+- Búsqueda exacta por número CEP de 5 o 6 dígitos —incluidos ceros iniciales— o por nombre completo normalizado.
+- Respuestas de hasta cinco coincidencias con número CEP, nombre, consejo regional, habilidad, fecha de actualización y fotografía pública opcional.
+- Proyección pública D1 aislada del padrón maestro; la aplicación nunca se conecta directamente al sistema institucional.
+- Adaptadores demostrativos para JSON, CSV y API/NDJSON que producen el mismo snapshot canónico verificable.
 - Controles anti-enumeración y anti-scraping sin Redis ni infraestructura permanente.
-- Pipeline de seguridad reproducible y de costo mínimo.
 
-## Stack
-
-- Cloudflare Workers, D1, Turnstile y rate limiting de borde. R2 permanece fuera del despliegue; las reglas WAF administradas no se habilitan en esta demo porque requieren un plan superior.
-- TypeScript, React, vinext, Drizzle ORM y SQLite/D1.
-- pnpm y Node.js 22.
-- GitHub Actions, CodeQL, Dependency Review, Dependabot, secret scanning y OWASP ZAP.
+Para probar la demo puede utilizar el número CEP sintético `00001`.
 
 ## Arquitectura
 
-La aplicación pública consulta exclusivamente D1. El padrón maestro produce un snapshot mínimo mediante un adaptador interno; el lote se valida en staging y se activa atómicamente. No existe conexión pública hacia el sistema principal del CEP.
+```mermaid
+flowchart LR
+    U["Ciudadano"] --> E["Cloudflare Edge<br/>TLS, DDoS y rate limiting"]
+    E --> W["Cloudflare Worker<br/>UI, API y cabeceras de seguridad"]
+    W --> T["Turnstile<br/>verificación servidor a servidor"]
+    W --> D["D1<br/>proyección pública"]
 
-Los detalles operativos y las decisiones internas se mantienen fuera del repositorio público. Los contratos ejecutables versionados permiten revisar la interfaz y las restricciones aplicadas por el código.
-
-## Ejecución local
-
-```bash
-cd app
-corepack enable
-pnpm install --frozen-lockfile
-pnpm run data:demo
-pnpm run data:verify
-pnpm run test
+    O["Origen privado<br/>fase institucional"] --> A["Adaptador / exportación"]
+    A --> S["Snapshot canónico<br/>validación y staging"]
+    S --> D
 ```
+
+La actualización prevista es unidireccional: origen privado → exportación mínima → validación → staging → activación atómica. Si la carga falla, el snapshot público anterior permanece activo. El origen real y sus credenciales quedan fuera de la aplicación pública.
+
+## Seguridad implementada
+
+- Turnstile obligatorio en la demo pública, con verificación en el servidor y renovación del token después de cada intento.
+- Consultas exactas, sin comodines, listados, paginación ni exportación; máximo cinco resultados.
+- SQL preparado, validación estricta de entrada y respuestas sin detalles internos.
+- Rate limiting de Cloudflare Free en la API pública: 5 solicitudes por 10 segundos por IP y bloqueo temporal al exceder el umbral.
+- CSP con nonce, HSTS, `nosniff`, políticas de permisos y referencias, protección de iframe y respuestas HTML/JSON con `no-store`.
+- `x-request-id` para soporte sin registrar el término buscado ni el token de Turnstile.
+- Publicación del padrón desde `staging` con versión y checksum, seguida de activación atómica.
+- Observabilidad nativa de Workers sin logs de aplicación que contengan búsquedas o tokens.
+
+Las reglas WAF administradas no están habilitadas porque requieren un plan superior. R2 tampoco forma parte del despliegue actual. No se creó ningún recurso facturable para cerrar la Iteración 2.
+
+## Stack
+
+- Cloudflare Workers, D1, Turnstile y rate limiting de borde.
+- TypeScript, React 19, vinext, Drizzle ORM y SQLite/D1.
+- Node.js 22 y pnpm fijado mediante Corepack.
+- GitHub Actions, CodeQL, Dependency Review, Dependabot, secret scanning y OWASP ZAP.
 
 ## DevSecOps
 
-Cada push o pull request ejecuta generación/verificación de datos, lint, pruebas, build, auditoría de dependencias, Dependency Review y CodeQL. OWASP ZAP Baseline analiza semanalmente el dominio demo y también puede ejecutarse manualmente; el workflow bloquea alertas no aceptadas mediante reglas versionadas. Una variable `DEMO_BASE_URL` permite reemplazar el destino predeterminado.
+| Control | Ejecución | Comportamiento |
+| --- | --- | --- |
+| Datos, lint, pruebas y build | Push y pull request hacia `main` | Bloqueante |
+| `pnpm audit` | Push y pull request | Bloquea vulnerabilidades altas/críticas conocidas en producción |
+| Dependency Review | Pull request | Bloquea dependencias nuevas de severidad alta o crítica |
+| CodeQL `security-extended` | Push y pull request | Ejecuta SAST; los hallazgos nuevos se revisan antes de integrar |
+| Dependabot | Semanal | Propone actualizaciones de npm y GitHub Actions |
+| OWASP ZAP Baseline | Semanal y manual | Bloquea cualquier alerta no aceptada en `.zap/rules.tsv` |
 
-## Identidad y uso de marca
+La rama `main` está protegida. Los cambios se integran mediante pull request y se someten a controles de calidad y seguridad.
 
-La demostración utiliza una identidad visual propia inspirada en servicios públicos digitales. La arquitectura de presentación admite un perfil `cep-preview` para pruebas visuales autorizadas, pero el perfil público predeterminado siempre es `demo`. El cambio no duplica páginas ni lógica funcional.
+## Ejecución local
 
-## Alcance del MVP
+Requisitos: Node.js `22.13` o superior y Corepack disponible.
 
-El MVP reemplaza solamente `/validar/`; no reconstruye WordPress. No incorpora RENIEC/PIDE, login, OTP, pagos, cálculo de deuda, Redis, Keycloak, Kubernetes ni microservicios.
+```bash
+git clone https://github.com/ygallardops/conoce-tu-enfermero-demo.git
+cd conoce-tu-enfermero-demo/app
+corepack enable
+corepack prepare pnpm@11.16.0 --activate
+pnpm install --frozen-lockfile
+pnpm run data:demo
+pnpm run data:verify
+pnpm run lint
+pnpm run test
+pnpm run dev
+```
 
-## Interfaces públicas
+`pnpm run test` compila la aplicación y ejecuta las pruebas automatizadas. Los datos generados son determinísticos y están marcados explícitamente como sintéticos.
 
-- [Contrato OpenAPI](openapi/consulta-api.yaml)
-- [Esquema JSON del snapshot](contracts/padron-snapshot.schema.json)
+## Configuración
+
+| Variable o secreto | Uso |
+| --- | --- |
+| `PUBLIC_BRAND_PROFILE` | Perfil visual público: `demo` es el valor seguro predeterminado. |
+| `PUBLIC_TURNSTILE_SITE_KEY` | Clave pública del widget Turnstile. |
+| `TURNSTILE_SECRET_KEY` | Secreto del Worker para validar Turnstile; nunca se guarda en Git. |
+| `ALLOWED_FRAME_ANCESTORS` | Lista opcional de orígenes HTTPS autorizados para iframe; sin valor, se deniega la incrustación. |
+| `DEMO_BASE_URL` | Variable de GitHub Actions para cambiar el destino del DAST. |
+
+El ejemplo local está en [`app/.env.example`](app/.env.example). No copie secretos reales a archivos versionados.
+
+## Estado y próximos pasos
+
+- Iteración 0: contratos, esquema D1, datos sintéticos y adaptadores equivalentes — completada.
+- Iteración 1: consulta funcional, interfaz accesible, D1 y Turnstile — completada y desplegada.
+- Iteración 2: cabeceras, publicación atómica, rate limiting, observabilidad, DAST bloqueante y protección de `main` — completada.
+- Iteración 3: adaptar el origen real, validar el catálogo institucional y preparar la sustitución controlada de `/validar/` — pendiente de información y autorización del CEP.
+
+## Alcance y uso de marca
+
+El MVP reemplaza únicamente el validador legado `/validar/`; no reconstruye WordPress. No incorpora RENIEC/PIDE, cuentas, OTP, correo, pagos, cálculo de deuda, constancias firmadas, descargas masivas, Redis, Keycloak, Kubernetes ni microservicios.
+
+La identidad visual es propia y está inspirada en servicios públicos digitales. Existe un perfil declarativo `cep-preview` para pruebas visuales autorizadas, pero `demo` es siempre el valor predeterminado y seguro. El repositorio no distribuye logotipos oficiales ni afirma representar al CEP.
+
+## Contratos públicos
+
+- [Contrato OpenAPI de consulta](openapi/consulta-api.yaml)
+- [JSON Schema del snapshot](contracts/padron-snapshot.schema.json)
 - [Política de seguridad](SECURITY.md)
 
 ## Licencia
 
-El contenido publicado se distribuye bajo la [licencia MIT](LICENSE). La licencia no concede derechos sobre nombres, logotipos o marcas de terceros.
+El código publicado se distribuye bajo la [licencia MIT](LICENSE). La licencia no concede derechos sobre nombres, logotipos o marcas de terceros.
