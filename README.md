@@ -6,7 +6,7 @@
 
 Prototipo serverless y seguro para sustituir el validador público de colegiatura y habilidad del Colegio de Enfermeros del Perú (CEP). El proyecto demuestra una arquitectura Lean de bajo mantenimiento, aislamiento de datos y DevSecOps para una entidad con equipo técnico y presupuesto reducidos.
 
-> **Demo personal no oficial.** La Iteración 2 está completada y desplegada. Todos los nombres, fotografías y registros son sintéticos; el servicio no consulta el padrón real ni emite verificaciones oficiales.
+> **Demo personal no oficial.** La aplicación y su línea base de seguridad están desplegadas. Todos los nombres, fotografías y registros son sintéticos; el servicio no consulta el padrón real ni emite verificaciones oficiales.
 
 - [Abrir la demostración](https://enfermeros-demo.yersongallardo.com/)
 - [Consultar el contrato OpenAPI](openapi/consulta-api.yaml)
@@ -50,7 +50,7 @@ La actualización prevista es unidireccional: origen privado → exportación m�
 - Publicación del padrón desde `staging` con versión y checksum, seguida de activación atómica.
 - Observabilidad nativa de Workers sin logs de aplicación que contengan búsquedas o tokens.
 
-Las reglas WAF administradas no están habilitadas porque requieren un plan superior. R2 tampoco forma parte del despliegue actual. No se creó ningún recurso facturable para cerrar la Iteración 2.
+Las reglas WAF administradas no están habilitadas porque requieren un plan superior. R2 tampoco forma parte del despliegue actual. La línea base vigente no requirió crear recursos facturables.
 
 ## Stack
 
@@ -105,10 +105,10 @@ El ejemplo local está en [`app/.env.example`](app/.env.example). No copie secre
 
 ## Estado y próximos pasos
 
-- Iteración 0: contratos, esquema D1, datos sintéticos y adaptadores equivalentes — completada.
-- Iteración 1: consulta funcional, interfaz accesible, D1 y Turnstile — completada y desplegada.
-- Iteración 2: cabeceras, publicación atómica, rate limiting, observabilidad, DAST bloqueante y protección de `main` — completada.
-- Iteración 3: adaptar el origen real, validar el catálogo institucional y preparar la sustitución controlada de `/validar/` — pendiente de información y autorización del CEP.
+- Implementado: contratos ejecutables, esquema D1, datos sintéticos y adaptadores equivalentes.
+- Desplegado: consulta accesible, D1, Turnstile y metadatos para vistas previas sociales.
+- Operativo: cabeceras defensivas, publicación atómica, rate limiting, observabilidad, DAST bloqueante y protección de `main`.
+- Próximo paso institucional: adaptar el origen real, validar el catálogo oficial y preparar la sustitución controlada de `/validar/` cuando el CEP proporcione la información y autorizaciones necesarias.
 
 ## Alcance y uso de marca
 

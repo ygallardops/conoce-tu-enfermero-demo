@@ -32,7 +32,7 @@ En desarrollo local se conserva el contrato de Turnstile mediante un token de de
 
 La identidad se selecciona durante el build mediante `PUBLIC_BRAND_PROFILE`: `demo` es el perfil predeterminado y `cep-preview` se reserva para pruebas visuales autorizadas. Un valor desconocido vuelve de forma segura a `demo`.
 
-## Seguridad y operación — Iteración 2 completada
+## Seguridad y operación
 
 - El Worker aplica CSP con nonce, HSTS, `nosniff`, políticas de permisos y referencias, aislamiento de origen y `no-store` para HTML/JSON.
 - La demo deniega iframes por defecto; `ALLOWED_FRAME_ANCESTORS` acepta únicamente orígenes HTTPS explícitos.
@@ -42,7 +42,7 @@ La identidad se selecciona durante el build mediante `PUBLIC_BRAND_PROFILE`: `de
 - Workers Observability está habilitado sin logs de aplicación que contengan búsquedas o tokens.
 - OWASP ZAP es bloqueante para alertas no aceptadas; CodeQL, Dependency Review, pruebas y build se ejecutan como controles del repositorio.
 
-Las reglas WAF administradas no se habilitaron porque requieren un plan superior. Ningún recurso facturable fue necesario para completar esta iteración.
+Las reglas WAF administradas no se habilitaron porque requieren un plan superior. La línea base vigente no necesitó recursos facturables adicionales.
 
 ## Configuración
 
