@@ -60,8 +60,12 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.equal(response.headers.get("x-frame-options"), "DENY");
   const csp = response.headers.get("content-security-policy") ?? "";
   const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
+  const scriptSources = csp
+    .split(";")
+    .map((directive) => directive.trim().split(/\s+/))
+    .find(([directive]) => directive === "script-src") ?? [];
   assert.match(csp, /frame-ancestors 'none'/);
-  assert.ok(csp.includes("https://challenges.cloudflare.com"));
+  assert.ok(scriptSources.includes("https://challenges.cloudflare.com"));
   assert.doesNotMatch(csp, /unsafe-inline/);
   assert.ok(nonce);
   assert.ok(html.includes(`nonce="${nonce}"`));
