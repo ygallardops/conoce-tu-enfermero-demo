@@ -6,3 +6,9 @@
 90004	IGNORE	(Cross-Origin isolation headers: excepción documentada)
 10035	IGNORE	(HSTS ausente solo en robots.txt gestionado por Cloudflare)
 10021	IGNORE	(nosniff ausente solo en robots.txt gestionado por Cloudflare)
+# Alertas informativas revisadas: el HTML/API usa no-store y los assets tienen
+# hash; no hay datos de consulta en recursos almacenables. Estas referencias
+# no deben ocultar hallazgos de riesgo alto o medio.
+10109	IGNORE	(Modern Web Application - informativa)
+10049	IGNORE	(Política de almacenamiento revisada)
+10015	IGNORE	(Directivas de caché revisadas)
