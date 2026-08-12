@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { ensureDemoSnapshot, queryPublicRegistry } from "@/lib/padron";
+import { queryPublicRegistry } from "@/lib/padron";
 import { validateConsultaPayload } from "@/lib/consulta.mjs";
 
 function responseHeaders(requestId: string) {
@@ -52,17 +52,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Iteración 1: token sintético local. Turnstile se verificará contra el
-    // servicio administrado en el despliegue demo, sin cambiar este contrato.
-    const updatedAt = await ensureDemoSnapshot(env.DB);
-    const results = await queryPublicRegistry(env.DB, validation.value);
+    const queryResult = await queryPublicRegistry(env.DB, validation.value);
+    if (!queryResult) throw new Error("No existe un snapshot activo.");
 
     return Response.json(
       {
         request_id: requestId,
-        resultados: results,
-        total: results.length,
-        datos_actualizados_al: updatedAt,
+        resultados: queryResult.records,
+        total: queryResult.records.length,
+        datos_actualizados_al: queryResult.generatedAt,
       },
       { headers: responseHeaders(requestId) },
     );

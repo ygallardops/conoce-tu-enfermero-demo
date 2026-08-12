@@ -27,6 +27,7 @@ Están dentro de alcance:
 
 - el código mantenido en este repositorio;
 - la API `POST /api/v1/consulta` de la demo;
+- el validador y CLI de ingesta D1, únicamente con snapshots sintéticos y sin ejecutar escrituras remotas no autorizadas;
 - la configuración de seguridad y los workflows versionados;
 - el dominio demo, mediante pruebas manuales de bajo volumen.
 
@@ -60,6 +61,6 @@ Estos tiempos son objetivos de respuesta inicial, no compromisos de remediación
 
 ## Privacidad
 
-La aplicación no requiere registro y no debe almacenar el dato consultado ni el token Turnstile en logs de aplicación. Las respuestas incluyen un identificador aleatorio de solicitud para soporte. La observabilidad se limita a metadatos operativos del Worker y a los controles del proveedor.
+La aplicación no requiere registro y no debe almacenar el dato consultado ni el token Turnstile en logs de aplicación. El CLI de ingesta tampoco debe imprimir registros, parámetros SQL ni credenciales. Las respuestas incluyen un identificador aleatorio de solicitud para soporte. La observabilidad se limita a metadatos operativos del Worker y a los controles del proveedor.
 
 Si un registro sintético coincidiera accidentalmente con una persona real, repórtelo de forma privada para evaluar su sustitución sin publicar información personal.

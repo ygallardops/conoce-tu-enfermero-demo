@@ -107,11 +107,12 @@ test("publica una imagen social propia para vistas previas", async () => {
 });
 
 test("mantiene alineados los contratos del número CEP y el hosting", async () => {
-  const [schemaText, openapi, hostingText, wranglerText, assetHeaders] = await Promise.all([
+  const [schemaText, openapi, hostingText, wranglerText, viteText, assetHeaders] = await Promise.all([
     readFile(new URL("../../contracts/padron-snapshot.schema.json", import.meta.url), "utf8"),
     readFile(new URL("../../openapi/consulta-api.yaml", import.meta.url), "utf8"),
     readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
     readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+    readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
     readFile(new URL("../public/_headers", import.meta.url), "utf8"),
   ]);
   const schema = JSON.parse(schemaText);
@@ -122,17 +123,23 @@ test("mantiene alineados los contratos del número CEP y el hosting", async () =
   assert.equal(hosting.d1, "DB");
   assert.equal("r2" in hosting, false);
   assert.doesNotMatch(wranglerText, /run_worker_first/);
+  assert.doesNotMatch(viteText, /compatibility_flags/);
   assert.match(assetHeaders, /Strict-Transport-Security/);
   assert.match(assetHeaders, /Content-Security-Policy: default-src 'none'/);
 });
 
-test("publica el padron desde staging sin reescribir una version", async () => {
-  const source = await readFile(new URL("../lib/padron.ts", import.meta.url), "utf8");
+test("separa la consulta pública de la ingesta del padrón", async () => {
+  const [querySource, routeSource, importerSource] = await Promise.all([
+    readFile(new URL("../lib/padron.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/v1/consulta/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/data/import-d1.mjs", import.meta.url), "utf8"),
+  ]);
 
-  assert.match(source, /status = 'staging'/);
-  assert.match(source, /status = 'retired'/);
-  assert.match(source, /status = 'active'/);
-  assert.match(source, /snapshot activo no coincide con la version canonica/i);
+  assert.doesNotMatch(querySource, /\b(CREATE|INSERT|UPDATE|DELETE)\b/);
+  assert.doesNotMatch(routeSource, /ensureDemoSnapshot|padron-snapshot\.json/);
+  assert.match(importerSource, /status = 'staging'/);
+  assert.match(importerSource, /status = 'retired'/);
+  assert.match(importerSource, /status = 'active'/);
 });
 
 test("la API devuelve un identificador de soporte sin exponer la consulta", async () => {
