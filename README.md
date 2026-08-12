@@ -84,12 +84,14 @@ corepack prepare pnpm@11.16.0 --activate
 pnpm install --frozen-lockfile
 pnpm run data:demo
 pnpm run data:verify
+pnpm run data:import:check
+pnpm run data:local:init
 pnpm run lint
 pnpm run test
 pnpm run dev
 ```
 
-`pnpm run test` compila la aplicación y ejecuta las pruebas automatizadas. Los datos generados son determinísticos y están marcados explícitamente como sintéticos.
+`data:import:check` valida el plan de ingesta sin red ni credenciales. `data:local:init` carga exclusivamente el snapshot sintético en D1 local. `pnpm run test` compila la aplicación y ejecuta las pruebas automatizadas.
 
 ## Configuración
 
@@ -100,8 +102,13 @@ pnpm run dev
 | `TURNSTILE_SECRET_KEY` | Secreto del Worker para validar Turnstile; nunca se guarda en Git. |
 | `ALLOWED_FRAME_ANCESTORS` | Lista opcional de orígenes HTTPS autorizados para iframe; sin valor, se deniega la incrustación. |
 | `DEMO_BASE_URL` | Variable de GitHub Actions para cambiar el destino del DAST. |
+| `CLOUDFLARE_API_TOKEN` | Secreto de privilegio mínimo usado únicamente por el CLI de ingesta remota. |
+| `CLOUDFLARE_ACCOUNT_ID` | Cuenta destino para una ingesta explícitamente autorizada. |
+| `CLOUDFLARE_D1_DATABASE_ID` | Base D1 destino para una ingesta explícitamente autorizada. |
 
 El ejemplo local está en [`app/.env.example`](app/.env.example). No copie secretos reales a archivos versionados.
+
+La ingesta remota permanece desactivada por defecto. El CLI solo escribe cuando recibe `--apply`, la confirmación exacta de `dataset_version` y las tres variables Cloudflare; el modo normal es un `dry-run` local. No ejecute `--apply` contra la demo sin una autorización operativa explícita.
 
 ## Estado y próximos pasos
 

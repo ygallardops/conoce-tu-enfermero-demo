@@ -15,6 +15,8 @@ corepack prepare pnpm@11.16.0 --activate
 pnpm install --frozen-lockfile
 pnpm run data:demo
 pnpm run data:verify
+pnpm run data:import:check
+pnpm run data:local:init
 pnpm run lint
 pnpm run test
 pnpm run dev
@@ -23,6 +25,8 @@ pnpm run dev
 `data:demo` genera el mismo padrón sintético desde tres orígenes simulados: JSON/exportación de base de datos, CSV y API/NDJSON. `data:verify` comprueba que los snapshots y checksums sean equivalentes, que no existan CEP duplicados y que no aparezcan campos personales fuera del contrato público.
 
 Los datos de `data/demo/` son ficticios y no representan colegiados reales. Puede probar la consulta con el número CEP `00001`.
+
+`data:import:check` valida el snapshot y el plan de lotes sin usar red. `data:local:init` genera temporalmente un SQL estático solo con fixtures sintéticos, lo carga mediante Wrangler en D1 local y elimina el archivo temporal al terminar.
 
 ## Estado funcional
 
@@ -56,6 +60,8 @@ Configuración de runtime:
 - `TURNSTILE_SECRET_KEY`: secreto del Worker; nunca debe guardarse en Git.
 - `ALLOWED_FRAME_ANCESTORS`: lista opcional, separada por comas, de orígenes HTTPS autorizados para iframe.
 - `DB`: binding D1 de la proyección pública.
+
+La ingesta remota se ejecuta fuera del Worker mediante `scripts/data/import-d1.mjs`. Su modo predeterminado es `dry-run`; `--apply` exige confirmación exacta de la versión y `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` y `CLOUDFLARE_D1_DATABASE_ID` por entorno.
 
 R2 no está declarado ni habilitado. Si posteriormente se autoriza para fotografías, deberá evaluarse y documentarse antes de añadir el binding.
 

@@ -36,7 +36,7 @@ jobs:
       - name: Instalar dependencias reproducibles
         run: pnpm install --frozen-lockfile
       - name: Generar y verificar datos sintéticos
-        run: pnpm run data:demo && pnpm run data:verify
+        run: pnpm run data:demo && pnpm run data:verify && pnpm run data:import:check
       - name: Analizar estilo y tipos
         run: pnpm run lint
       - name: Ejecutar pruebas y build

@@ -14,7 +14,9 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "data:demo": "node scripts/data/generate-demo.mjs",
-    "data:verify": "node scripts/data/verify-demo.mjs"
+    "data:verify": "node scripts/data/verify-demo.mjs",
+    "data:import:check": "node scripts/data/import-d1.mjs data/demo/canonical/padron-snapshot.json",
+    "data:local:init": "node scripts/data/seed-local-d1.mjs"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
