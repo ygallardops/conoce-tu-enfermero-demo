@@ -29,8 +29,12 @@ paths:
           description: Entrada inválida
         '403':
           description: Verificación Turnstile ausente, inválida o expirada
+        '413':
+          description: Cuerpo de solicitud mayor al límite admitido
+        '415':
+          description: Content-Type distinto de application/json
         '503':
-          description: Proyección pública temporalmente no disponible
+          description: Proyección pública o verificación anti-bot temporalmente no disponible
 components:
   schemas:
     ConsultaRequest:
@@ -119,3 +123,4 @@ components:
         foto_url:
           type: [string, 'null']
           maxLength: 500
+          description: Ruta propia o URL HTTPS cuyo host haya sido aprobado durante la ingesta.

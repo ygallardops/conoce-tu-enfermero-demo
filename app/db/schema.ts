@@ -2,7 +2,8 @@
 // Add Drizzle tables here when the site actually needs a database.
 // See examples/d1/db/schema.ts for an opt-in example.
 export {};
-import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const padronSnapshots = sqliteTable(
   "padron_snapshots",
@@ -18,7 +19,13 @@ export const padronSnapshots = sqliteTable(
       .default("staging"),
     importedAt: text("imported_at").notNull(),
   },
-  (table) => [index("idx_padron_snapshots_status").on(table.status)],
+  (table) => [
+    index("idx_padron_snapshots_status").on(table.status),
+    uniqueIndex("idx_padron_single_active")
+      .on(table.status)
+      .where(sql`${table.status} = 'active'`),
+    check("ck_padron_snapshots_status", sql`${table.status} in ('staging', 'active', 'retired')`),
+  ],
 );
 
 export const padronPublico = sqliteTable(
@@ -44,5 +51,6 @@ export const padronPublico = sqliteTable(
       table.nombreNormalizado,
       table.datasetVersion,
     ),
+    check("ck_padron_estado_habilidad", sql`${table.estadoHabilidad} in ('Habilitado', 'Inhabilitado')`),
   ],
 );

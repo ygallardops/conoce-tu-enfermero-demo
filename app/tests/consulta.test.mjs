@@ -2,17 +2,22 @@ import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 import { normalizeSearchValue, validateConsultaPayload } from "../lib/consulta.mjs";
+import { readRequestJson } from "../lib/http-request.mjs";
 
-async function render(overrides = {}) {
+async function fetchWorker(path, init = {}, overrides = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request("http://localhost/", { headers: { accept: "text/html" } }),
+    new Request(new URL(path, "http://localhost/"), init),
     { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) }, ...overrides },
     { waitUntil() {}, passThroughOnException() {} },
   );
+}
+
+async function render(overrides = {}) {
+  return fetchWorker("/", { headers: { accept: "text/html" } }, overrides);
 }
 
 test("normaliza la búsqueda y rechaza comodines", () => {
@@ -31,6 +36,14 @@ test("normaliza la búsqueda y rechaza comodines", () => {
   );
   assert.equal(
     validateConsultaPayload({ tipo: "nombre", valor: "ANA*", turnstile_token: "local" }).ok,
+    false,
+  );
+  assert.equal(
+    validateConsultaPayload({ tipo: "cep", valor: "00123", turnstile_token: "local", extra: true }).ok,
+    false,
+  );
+  assert.equal(
+    validateConsultaPayload({ tipo: "cep", valor: "00123", turnstile_token: "x".repeat(4_097) }).ok,
     false,
   );
 });
@@ -93,6 +106,8 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.doesNotMatch(client, /hero-promises|Sin registro|Coincidencia exacta/);
   assert.doesNotMatch(client, /style=\{/);
   assert.match(client, /turnstile\?\.reset/);
+  assert.match(client, /action: "consulta_publica"/);
+  assert.doesNotMatch(client, /local-demo-token/);
   assert.match(client, /setTurnstileToken\(""\)/);
   assert.match(client, /resultsHeading\.current\.focus\(\{ preventScroll: true \}\)/);
   assert.match(client, /scrollIntoView/);
@@ -120,6 +135,8 @@ test("mantiene alineados los contratos del número CEP y el hosting", async () =
 
   assert.equal(schema.$defs.public_record.properties.num_cep.pattern, "^[0-9]{5,6}$");
   assert.match(openapi, /pattern: '\^\[0-9\]\{5,6\}\$'/);
+  assert.match(openapi, /'413':/);
+  assert.match(openapi, /'415':/);
   assert.equal(hosting.d1, "DB");
   assert.equal("r2" in hosting, false);
   assert.doesNotMatch(wranglerText, /run_worker_first/);
@@ -146,5 +163,34 @@ test("la API devuelve un identificador de soporte sin exponer la consulta", asyn
   const source = await readFile(new URL("../app/api/v1/consulta/route.ts", import.meta.url), "utf8");
 
   assert.match(source, /"x-request-id": requestId/);
+  assert.match(source, /readRequestJson/);
+  assert.match(source, /AbortSignal\.timeout\(TURNSTILE_TIMEOUT_MS\)/);
+  assert.match(source, /TURNSTILE_EXPECTED_HOSTNAME/);
+  assert.match(source, /TURNSTILE_EXPECTED_ACTION/);
+  assert.match(source, /if \(!secret \|\| !expectedHostname \|\| !expectedAction\) return "unavailable"/);
+  assert.doesNotMatch(source, /local-demo-token/);
   assert.doesNotMatch(source, /console\.(log|info|warn|error)/);
+});
+
+test("la API limita Content-Type y tamaño antes de procesar JSON", async () => {
+  const unsupported = new Request("http://localhost/api/v1/consulta", {
+    method: "POST",
+    headers: { "content-type": "text/plain" },
+    body: "consulta",
+  });
+  await assert.rejects(readRequestJson(unsupported), (error) => error?.status === 415);
+
+  const oversized = new Request("http://localhost/api/v1/consulta", {
+    method: "POST",
+    headers: { "content-type": "application/json", "content-length": "8193" },
+    body: "{}",
+  });
+  await assert.rejects(readRequestJson(oversized), (error) => error?.status === 413);
+
+  const valid = new Request("http://localhost/api/v1/consulta", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ok: true }),
+  });
+  assert.deepEqual(await readRequestJson(valid), { ok: true });
 });

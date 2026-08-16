@@ -17,11 +17,11 @@ jobs:
       DEMO_BASE_URL: ${{ vars.DEMO_BASE_URL || 'https://enfermeros-demo.yersongallardo.com' }}
     steps:
       - name: Obtener configuración
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
       - name: Escanear dominio demo sin crear incidencias
-        uses: zaproxy/action-baseline@v0.15.0
+        uses: zaproxy/action-baseline@6c5a007541891231cd9e0ddec25d4f25c59c9874 # v0.15.0
         with:
           target: ${{ env.DEMO_BASE_URL }}
           allow_issue_writing: false
@@ -30,3 +30,6 @@ jobs:
           rules_file_name: .zap/rules.tsv
           fail_action: true
           artifact_name: zap-demo-report
+      - name: Verificar cabeceras y contrato HTTP de la demo
+        if: always()
+        run: node app/scripts/security/smoke-live.mjs

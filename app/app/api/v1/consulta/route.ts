@@ -1,6 +1,9 @@
 import { env } from "cloudflare:workers";
 import { queryPublicRegistry } from "@/lib/padron";
 import { validateConsultaPayload } from "@/lib/consulta.mjs";
+import { readRequestJson, RequestPayloadError } from "@/lib/http-request.mjs";
+
+const TURNSTILE_TIMEOUT_MS = 5_000;
 
 function responseHeaders(requestId: string) {
   return {
@@ -11,17 +14,37 @@ function responseHeaders(requestId: string) {
   };
 }
 
-async function verifyTurnstile(token: string, request: Request) {
-  const secret = (env as typeof env & { TURNSTILE_SECRET_KEY?: string }).TURNSTILE_SECRET_KEY;
-  if (!secret) return token === "local-demo-token";
+type TurnstileOutcome = "valid" | "invalid" | "unavailable";
+
+async function verifyTurnstile(token: string, request: Request): Promise<TurnstileOutcome> {
+  const runtimeEnv = env as typeof env & {
+    TURNSTILE_SECRET_KEY?: string;
+    TURNSTILE_EXPECTED_HOSTNAME?: string;
+    TURNSTILE_EXPECTED_ACTION?: string;
+  };
+  const secret = runtimeEnv.TURNSTILE_SECRET_KEY;
+  const expectedHostname = runtimeEnv.TURNSTILE_EXPECTED_HOSTNAME;
+  const expectedAction = runtimeEnv.TURNSTILE_EXPECTED_ACTION;
+  if (!secret || !expectedHostname || !expectedAction) return "unavailable";
+
   const form = new FormData();
   form.set("secret", secret);
   form.set("response", token);
   const ip = request.headers.get("CF-Connecting-IP");
   if (ip) form.set("remoteip", ip);
-  const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: form });
-  const result = (await response.json()) as { success?: boolean };
-  return result.success === true;
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body: form,
+      signal: AbortSignal.timeout(TURNSTILE_TIMEOUT_MS),
+    });
+    if (!response.ok) return "unavailable";
+    const result = (await response.json()) as { success?: boolean; hostname?: string; action?: string };
+    if (result.success !== true) return "invalid";
+    return result.hostname === expectedHostname && result.action === expectedAction ? "valid" : "invalid";
+  } catch {
+    return "unavailable";
+  }
 }
 
 function errorResponse(requestId: string, status: number, message: string) {
@@ -36,8 +59,9 @@ export async function POST(request: Request) {
   let body: unknown;
 
   try {
-    body = await request.json();
-  } catch {
+    body = await readRequestJson(request);
+  } catch (error) {
+    if (error instanceof RequestPayloadError) return errorResponse(requestId, error.status, error.message);
     return errorResponse(requestId, 400, "El formato de la consulta no es válido.");
   }
 
@@ -47,7 +71,11 @@ export async function POST(request: Request) {
   }
 
   const turnstileToken = (body as { turnstile_token: string }).turnstile_token;
-  if (!(await verifyTurnstile(turnstileToken, request))) {
+  const turnstileOutcome = await verifyTurnstile(turnstileToken, request);
+  if (turnstileOutcome === "unavailable") {
+    return errorResponse(requestId, 503, "La verificación no está disponible en este momento. Inténtalo nuevamente.");
+  }
+  if (turnstileOutcome !== "valid") {
     return errorResponse(requestId, 403, "No fue posible validar la consulta. Inténtalo nuevamente.");
   }
 

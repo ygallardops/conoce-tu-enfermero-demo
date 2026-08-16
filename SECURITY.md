@@ -6,6 +6,8 @@ Este repositorio mantiene únicamente la versión más reciente de la rama `main
 
 La demo es un proyecto personal no oficial, utiliza datos sintéticos y no consulta sistemas reales del Colegio de Enfermeros del Perú (CEP).
 
+Las dependencias soportadas son las fijadas por el lockfile de `main`. Los avisos altos o críticos confirmados se priorizan antes de cambios funcionales y su cierre se resume en [`SECURITY-MAINTENANCE.md`](SECURITY-MAINTENANCE.md).
+
 ## Reporte responsable
 
 No publique vulnerabilidades, credenciales, tokens, datos personales ni instrucciones de explotación en un issue, discusión o pull request público.

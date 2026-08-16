@@ -32,7 +32,7 @@ Los datos de `data/demo/` son ficticios y no representan colegiados reales. Pued
 
 La ruta `POST /api/v1/consulta` consulta exclusivamente la proyección D1 activa. Admite número CEP exacto de 5 o 6 dígitos o nombre completo normalizado, devuelve como máximo cinco coincidencias y no ofrece listados, comodines, paginación ni exportaciones.
 
-En desarrollo local se conserva el contrato de Turnstile mediante un token de demostración. En el dominio público, el widget administrado se verifica contra Cloudflare desde el servidor y `TURNSTILE_SECRET_KEY` permanece exclusivamente en los secretos del Worker.
+Turnstile falla de forma cerrada en todos los entornos. Para desarrollo local se deben usar las claves dummy publicadas por Cloudflare en un `.dev.vars` ignorado; no existe un token especial aceptado por el código. En el dominio público, `TURNSTILE_SECRET_KEY` permanece exclusivamente en los secretos del Worker y Siteverify debe acreditar el hostname y la acción configurados.
 
 La identidad se selecciona durante el build mediante `PUBLIC_BRAND_PROFILE`: `demo` es el perfil predeterminado y `cep-preview` se reserva para pruebas visuales autorizadas. Un valor desconocido vuelve de forma segura a `demo`.
 
@@ -41,6 +41,7 @@ La identidad se selecciona durante el build mediante `PUBLIC_BRAND_PROFILE`: `de
 - El Worker aplica CSP con nonce, HSTS, `nosniff`, políticas de permisos y referencias, aislamiento de origen y `no-store` para HTML/JSON.
 - La demo deniega iframes por defecto; `ALLOWED_FRAME_ANCESTORS` acepta únicamente orígenes HTTPS explícitos.
 - La API devuelve `x-request-id` sin registrar el dato consultado ni el token Turnstile.
+- La API exige JSON, limita el cuerpo a 8 KiB, rechaza campos adicionales y acota el token Turnstile.
 - La publicación D1 usa `staging`, versión y checksum antes de activar atómicamente un snapshot completo.
 - Cloudflare Free limita la API a 5 solicitudes por 10 segundos por IP y aplica un bloqueo temporal al exceder el umbral.
 - Workers Observability está habilitado sin logs de aplicación que contengan búsquedas o tokens.
@@ -58,6 +59,8 @@ El archivo `.env.example` contiene solo configuración pública de ejemplo:
 Configuración de runtime:
 
 - `TURNSTILE_SECRET_KEY`: secreto del Worker; nunca debe guardarse en Git.
+- `TURNSTILE_EXPECTED_HOSTNAME`: hostname exacto esperado en Siteverify.
+- `TURNSTILE_EXPECTED_ACTION`: acción exacta esperada en Siteverify.
 - `ALLOWED_FRAME_ANCESTORS`: lista opcional, separada por comas, de orígenes HTTPS autorizados para iframe.
 - `DB`: binding D1 de la proyección pública.
 
