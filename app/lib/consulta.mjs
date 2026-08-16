@@ -1,4 +1,6 @@
 const wildcardPattern = /[*%_]/;
+const consultaFields = new Set(["tipo", "valor", "turnstile_token"]);
+const maxTurnstileTokenLength = 4_096;
 
 export function normalizeSearchValue(value) {
   return String(value)
@@ -14,6 +16,9 @@ export function validateConsultaPayload(body) {
   if (body === null || typeof body !== "object" || Array.isArray(body)) {
     return { ok: false, message: "El formato de la consulta no es válido." };
   }
+  if (Object.keys(body).some((field) => !consultaFields.has(field)) || Object.keys(body).length !== consultaFields.size) {
+    return { ok: false, message: "El formato de la consulta no es válido." };
+  }
 
   const { tipo, valor, turnstile_token: turnstileToken } = body;
   if (tipo !== "cep" && tipo !== "nombre") {
@@ -21,6 +26,9 @@ export function validateConsultaPayload(body) {
   }
   if (typeof valor !== "string" || typeof turnstileToken !== "string" || !turnstileToken.trim()) {
     return { ok: false, message: "Completa los datos requeridos para consultar." };
+  }
+  if (turnstileToken.length > maxTurnstileTokenLength) {
+    return { ok: false, message: "El formato de la consulta no es válido." };
   }
   if (wildcardPattern.test(valor)) {
     return { ok: false, message: "No se permiten comodines en la consulta." };

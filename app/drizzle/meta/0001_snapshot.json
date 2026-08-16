@@ -1,0 +1,216 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "f9ef952d-7766-4670-8426-9d54995f954d",
+  "prevId": "fefbb9d9-6e10-4b33-a244-8f70772c770a",
+  "tables": {
+    "padron_publico": {
+      "name": "padron_publico",
+      "columns": {
+        "dataset_version": {
+          "name": "dataset_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "num_cep": {
+          "name": "num_cep",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombres_completos": {
+          "name": "nombres_completos",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre_normalizado": {
+          "name": "nombre_normalizado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "consejo_regional": {
+          "name": "consejo_regional",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "estado_habilidad": {
+          "name": "estado_habilidad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fecha_actualizacion": {
+          "name": "fecha_actualizacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "foto_url": {
+          "name": "foto_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_padron_cep_version": {
+          "name": "idx_padron_cep_version",
+          "columns": [
+            "num_cep",
+            "dataset_version"
+          ],
+          "isUnique": false
+        },
+        "idx_padron_nombre_version": {
+          "name": "idx_padron_nombre_version",
+          "columns": [
+            "nombre_normalizado",
+            "dataset_version"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "padron_publico_dataset_version_padron_snapshots_dataset_version_fk": {
+          "name": "padron_publico_dataset_version_padron_snapshots_dataset_version_fk",
+          "tableFrom": "padron_publico",
+          "tableTo": "padron_snapshots",
+          "columnsFrom": [
+            "dataset_version"
+          ],
+          "columnsTo": [
+            "dataset_version"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "padron_publico_dataset_version_num_cep_pk": {
+          "columns": [
+            "dataset_version",
+            "num_cep"
+          ],
+          "name": "padron_publico_dataset_version_num_cep_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "ck_padron_estado_habilidad": {
+          "name": "ck_padron_estado_habilidad",
+          "value": "\"padron_publico\".\"estado_habilidad\" in ('Habilitado', 'Inhabilitado')"
+        }
+      }
+    },
+    "padron_snapshots": {
+      "name": "padron_snapshots",
+      "columns": {
+        "dataset_version": {
+          "name": "dataset_version",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "schema_version": {
+          "name": "schema_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "generated_at": {
+          "name": "generated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "record_count": {
+          "name": "record_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "checksum_sha256": {
+          "name": "checksum_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'staging'"
+        },
+        "imported_at": {
+          "name": "imported_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_padron_snapshots_status": {
+          "name": "idx_padron_snapshots_status",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "idx_padron_single_active": {
+          "name": "idx_padron_single_active",
+          "columns": [
+            "status"
+          ],
+          "isUnique": true,
+          "where": "\"padron_snapshots\".\"status\" = 'active'"
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "ck_padron_snapshots_status": {
+          "name": "ck_padron_snapshots_status",
+          "value": "\"padron_snapshots\".\"status\" in ('staging', 'active', 'retired')"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

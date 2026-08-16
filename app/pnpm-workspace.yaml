@@ -2,3 +2,9 @@ allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
+
+# drizzle-kit conserva un cargador legado que permite una versión antigua de
+# esbuild. Se fuerza exclusivamente esa arista transitiva a la primera versión
+# corregida; db:generate forma parte de la validación para detectar incompatibilidad.
+overrides:
+  '@esbuild-kit/core-utils>esbuild': 0.25.12

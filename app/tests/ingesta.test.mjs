@@ -8,7 +8,7 @@ import {
   parseCliArgs,
   runCli,
 } from "../scripts/data/import-d1.mjs";
-import { validateCanonicalSnapshot } from "../scripts/data/snapshot-validation.mjs";
+import { calculateRecordsChecksum, validateCanonicalSnapshot } from "../scripts/data/snapshot-validation.mjs";
 
 async function demoSnapshot() {
   return JSON.parse(await readFile(
@@ -106,6 +106,23 @@ test("valida el snapshot canónico y detecta alteraciones", async () => {
   );
 });
 
+test("rechaza controles Unicode y fotografías fuera de hosts aprobados", async () => {
+  const snapshot = await demoSnapshot();
+  const externalPhoto = structuredClone(snapshot);
+  externalPhoto.records[0].foto_url = "https://imagenes.example/foto.webp";
+  externalPhoto.checksum_sha256 = calculateRecordsChecksum(externalPhoto.records);
+
+  assert.throws(() => validateCanonicalSnapshot(externalPhoto), /hosts aprobados/);
+  assert.doesNotThrow(() => validateCanonicalSnapshot(externalPhoto, {
+    allowedPhotoHosts: ["imagenes.example"],
+  }));
+
+  const spoofed = structuredClone(snapshot);
+  spoofed.records[0].nombres_completos = `ANA\u202E PERSONA SINTETICA`;
+  spoofed.checksum_sha256 = calculateRecordsChecksum(spoofed.records);
+  assert.throws(() => validateCanonicalSnapshot(spoofed), /caracteres no permitidos/);
+});
+
 test("genera lotes parametrizados sin concatenar el padrón al SQL", async () => {
   const snapshot = await demoSnapshot();
   const plan = buildImportPlan(snapshot, { chunkSize: 25 });
@@ -118,6 +135,8 @@ test("genera lotes parametrizados sin concatenar el padrón al SQL", async () =>
   assert.ok(recordStatements.every((item) => !item.sql.includes("PERSONA SINTETICA")));
   assert.match(plan.activate[0].sql, /candidate\.record_count/);
   assert.match(plan.activate[0].sql, /active\.generated_at >= candidate\.generated_at/);
+  assert.ok(plan.schema.some((item) => item.sql.includes("idx_padron_single_active")));
+  assert.ok(plan.schema.some((item) => item.sql.includes("CHECK (estado_habilidad")));
 });
 
 test("el CLI usa dry-run por defecto y exige confirmación para aplicar", async () => {

@@ -16,7 +16,8 @@ export const schemaStatements = [
     source TEXT NOT NULL,
     record_count INTEGER NOT NULL,
     checksum_sha256 TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'staging',
+    status TEXT NOT NULL DEFAULT 'staging'
+      CHECK (status IN ('staging', 'active', 'retired')),
     imported_at TEXT NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS padron_publico (
@@ -25,13 +26,15 @@ export const schemaStatements = [
     nombres_completos TEXT NOT NULL,
     nombre_normalizado TEXT NOT NULL,
     consejo_regional TEXT NOT NULL,
-    estado_habilidad TEXT NOT NULL,
+    estado_habilidad TEXT NOT NULL
+      CHECK (estado_habilidad IN ('Habilitado', 'Inhabilitado')),
     fecha_actualizacion TEXT NOT NULL,
     foto_url TEXT,
     PRIMARY KEY (dataset_version, num_cep),
     FOREIGN KEY (dataset_version) REFERENCES padron_snapshots(dataset_version) ON DELETE CASCADE
   )`,
   "CREATE INDEX IF NOT EXISTS idx_padron_snapshots_status ON padron_snapshots(status)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_padron_single_active ON padron_snapshots(status) WHERE status = 'active'",
   "CREATE INDEX IF NOT EXISTS idx_padron_cep_version ON padron_publico(num_cep, dataset_version)",
   "CREATE INDEX IF NOT EXISTS idx_padron_nombre_version ON padron_publico(nombre_normalizado, dataset_version)",
 ];

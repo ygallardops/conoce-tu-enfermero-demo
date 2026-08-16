@@ -18,6 +18,7 @@ const recordFields = [
   "fecha_actualizacion",
   "foto_url",
 ];
+const unsafeFormatCharacters = /[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/u;
 
 function fail(message) {
   throw new Error(message);
@@ -43,7 +44,7 @@ function assertCanonicalText(value, field, minLength, maxLength) {
     const codePoint = character.codePointAt(0);
     return codePoint !== undefined && (codePoint < 32 || codePoint === 127);
   });
-  if (value.includes("<") || value.includes(">") || hasControlCharacter) {
+  if (value.includes("<") || value.includes(">") || hasControlCharacter || unsafeFormatCharacters.test(value)) {
     fail(`${field}: contiene caracteres no permitidos.`);
   }
 }
@@ -54,7 +55,7 @@ function assertDate(value, field, now) {
   if (Date.parse(value) > now.getTime() + 86_400_000) fail(`${field}: fecha futura fuera de tolerancia.`);
 }
 
-function assertPhotoUrl(value, field) {
+function assertPhotoUrl(value, field, allowedPhotoHosts) {
   if (value === null) return;
   assertCanonicalText(value, field, 1, 500);
   if (value.startsWith("/")) {
@@ -70,8 +71,14 @@ function assertPhotoUrl(value, field) {
   } catch {
     fail(`${field}: URL inválida.`);
   }
-  if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
-    fail(`${field}: solo se permiten URL HTTPS sin credenciales.`);
+  if (
+    parsed.protocol !== "https:"
+    || parsed.username
+    || parsed.password
+    || parsed.port
+    || !allowedPhotoHosts.has(parsed.hostname.toLowerCase())
+  ) {
+    fail(`${field}: solo se permiten URL HTTPS de hosts aprobados y sin credenciales.`);
   }
 }
 
@@ -82,6 +89,9 @@ export function calculateRecordsChecksum(records) {
 
 export function validateCanonicalSnapshot(snapshot, options = {}) {
   const now = options.now ?? new Date();
+  const allowedPhotoHosts = new Set(
+    (options.allowedPhotoHosts ?? []).map((hostname) => String(hostname).trim().toLowerCase()),
+  );
   if (!isPlainObject(snapshot)) fail("snapshot: debe ser un objeto.");
   assertExactFields(snapshot, envelopeFields, "snapshot");
 
@@ -114,7 +124,7 @@ export function validateCanonicalSnapshot(snapshot, options = {}) {
       fail(`${context}.estado_habilidad: valor inválido.`);
     }
     assertDate(record.fecha_actualizacion, `${context}.fecha_actualizacion`, now);
-    assertPhotoUrl(record.foto_url, `${context}.foto_url`);
+    assertPhotoUrl(record.foto_url, `${context}.foto_url`, allowedPhotoHosts);
   }
 
   const checksum = calculateRecordsChecksum(snapshot.records);

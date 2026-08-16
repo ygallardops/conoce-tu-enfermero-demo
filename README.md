@@ -41,13 +41,13 @@ La actualización prevista es unidireccional: origen privado → exportación m�
 
 ## Seguridad implementada
 
-- Turnstile obligatorio en la demo pública, con verificación en el servidor y renovación del token después de cada intento.
+- Turnstile obligatorio y fail-closed, con validación servidor a servidor de token, hostname y acción, además de timeout controlado.
 - Consultas exactas, sin comodines, listados, paginación ni exportación; máximo cinco resultados.
-- SQL preparado, validación estricta de entrada y respuestas sin detalles internos.
+- SQL preparado, JSON de esquema cerrado y límites explícitos de cuerpo, campos y longitudes.
 - Rate limiting de Cloudflare Free en la API pública: 5 solicitudes por 10 segundos por IP y bloqueo temporal al exceder el umbral.
 - CSP con nonce, HSTS, `nosniff`, políticas de permisos y referencias, protección de iframe y respuestas HTML/JSON con `no-store`.
 - `x-request-id` para soporte sin registrar el término buscado ni el token de Turnstile.
-- Publicación del padrón desde `staging` con versión y checksum, seguida de activación atómica.
+- Publicación del padrón desde `staging` con versión, checksum e invariantes D1, seguida de activación atómica.
 - Observabilidad nativa de Workers sin logs de aplicación que contengan búsquedas o tokens.
 
 Las reglas WAF administradas no están habilitadas porque requieren un plan superior. R2 tampoco forma parte del despliegue actual. La línea base vigente no requirió crear recursos facturables.
@@ -64,13 +64,15 @@ Las reglas WAF administradas no están habilitadas porque requieren un plan supe
 | Control | Ejecución | Comportamiento |
 | --- | --- | --- |
 | Datos, lint, pruebas y build | Push y pull request hacia `main` | Bloqueante |
-| `pnpm audit` | Push y pull request | Bloquea vulnerabilidades altas/críticas conocidas en producción |
+| `pnpm audit` | Push y pull request | Revisa el lockfile completo y bloquea vulnerabilidades altas/críticas conocidas |
 | Dependency Review | Pull request | Bloquea dependencias nuevas de severidad alta o crítica |
 | CodeQL `security-extended` | Push y pull request | Ejecuta SAST; los hallazgos nuevos se revisan antes de integrar |
 | Dependabot | Semanal | Propone actualizaciones de npm y GitHub Actions |
-| OWASP ZAP Baseline | Semanal y manual | Bloquea cualquier alerta no aceptada en `.zap/rules.tsv` |
+| OWASP ZAP Baseline + smoke HTTP | Semanal y manual | Bloquea alertas no aceptadas y verifica cabeceras/contrato de rutas críticas |
 
-La rama `main` está protegida. Los cambios se integran mediante pull request y se someten a controles de calidad y seguridad.
+La rama `main` está protegida. Los cambios se integran mediante pull request y se someten a controles de calidad y seguridad. Las Actions externas se fijan a commits inmutables y Dependabot conserva comentarios de versión para proponer su renovación.
+
+El proyecto publica un [registro de mantenimiento de seguridad](SECURITY-MAINTENANCE.md) con fechas, alcance y evidencia de remediación, sin incluir payloads, secretos ni instrucciones de explotación.
 
 ## Ejecución local
 
@@ -100,6 +102,8 @@ pnpm run dev
 | `PUBLIC_BRAND_PROFILE` | Perfil visual público: `demo` es el valor seguro predeterminado. |
 | `PUBLIC_TURNSTILE_SITE_KEY` | Clave pública del widget Turnstile. |
 | `TURNSTILE_SECRET_KEY` | Secreto del Worker para validar Turnstile; nunca se guarda en Git. |
+| `TURNSTILE_EXPECTED_HOSTNAME` | Host público exacto que debe acreditar Siteverify. |
+| `TURNSTILE_EXPECTED_ACTION` | Acción exacta esperada para la consulta pública. |
 | `ALLOWED_FRAME_ANCESTORS` | Lista opcional de orígenes HTTPS autorizados para iframe; sin valor, se deniega la incrustación. |
 | `DEMO_BASE_URL` | Variable de GitHub Actions para cambiar el destino del DAST. |
 | `CLOUDFLARE_API_TOKEN` | Secreto de privilegio mínimo usado únicamente por el CLI de ingesta remota. |

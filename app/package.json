@@ -16,7 +16,8 @@
     "data:demo": "node scripts/data/generate-demo.mjs",
     "data:verify": "node scripts/data/verify-demo.mjs",
     "data:import:check": "node scripts/data/import-d1.mjs data/demo/canonical/padron-snapshot.json",
-    "data:local:init": "node scripts/data/seed-local-d1.mjs"
+    "data:local:init": "node scripts/data/seed-local-d1.mjs",
+    "security:smoke:live": "node scripts/security/smoke-live.mjs"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
@@ -24,7 +25,7 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.37.1",
+    "@cloudflare/vite-plugin": "1.52.1",
     "@eslint/js": "9.39.5",
     "@next/eslint-plugin-next": "16.3.0",
     "@tailwindcss/postcss": "4.3.3",
@@ -43,9 +44,9 @@
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "typescript-eslint": "8.67.0",
-    "vinext": "1.0.0-beta.4",
+    "vinext": "1.0.0-beta.6",
     "vite": "8.2.1",
-    "wrangler": "4.92.0"
+    "wrangler": "4.123.0"
   },
   "type": "module"
 }

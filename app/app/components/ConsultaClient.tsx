@@ -85,6 +85,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
       if (!window.turnstile || turnstileWidgetId.current) return;
       turnstileWidgetId.current = window.turnstile.render(turnstileElement.current!, {
         sitekey: __TURNSTILE_SITE_KEY__,
+        action: "consulta_publica",
         callback: (token: string) => {
           setTurnstileToken(token);
           setFormAlert(null);
@@ -154,7 +155,7 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
         body: JSON.stringify({
           tipo: searchType,
           valor: trimmed,
-          turnstile_token: __TURNSTILE_SITE_KEY__ ? turnstileToken : "local-demo-token",
+          turnstile_token: turnstileToken,
         }),
       });
       const body = (await response.json()) as ConsultaResponse & {
