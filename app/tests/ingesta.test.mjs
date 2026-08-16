@@ -139,6 +139,17 @@ test("genera lotes parametrizados sin concatenar el padrón al SQL", async () =>
   assert.ok(plan.schema.some((item) => item.sql.includes("CHECK (estado_habilidad")));
 });
 
+test("la migración D1 refuerza invariantes sin reconstruir tablas con datos", async () => {
+  const migration = await readFile(
+    new URL("../drizzle/0001_open_matthew_murdock.sql", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(migration, /CREATE UNIQUE INDEX IF NOT EXISTS `idx_padron_single_active`/);
+  assert.match(migration, /CREATE TRIGGER IF NOT EXISTS `ck_padron_estado_habilidad_insert`/);
+  assert.doesNotMatch(migration, /DROP TABLE|DELETE FROM|PRAGMA foreign_keys/i);
+});
+
 test("el CLI usa dry-run por defecto y exige confirmación para aplicar", async () => {
   const snapshotPath = fileURLToPath(new URL("../data/demo/canonical/padron-snapshot.json", import.meta.url));
   const dryRun = await runCli([snapshotPath]);
