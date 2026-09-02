@@ -20,3 +20,15 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      # init y analyze tienen que moverse en el mismo commit: si quedan en
+      # SHAs distintos, el job SAST falla con "configuration error" por
+      # desajuste de version. Sin agrupar, Dependabot abre una pull request
+      # por cada step y ninguna de las dos puede fusionarse sola.
+      # El orden importa: una dependencia entra en el primer grupo que la
+      # capture, asi que este va antes del comodin.
+      codeql-action:
+        patterns: ["github/codeql-action*"]
+      actions-non-major:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
