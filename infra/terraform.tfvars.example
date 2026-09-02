@@ -1,0 +1,6 @@
+# Copiar a terraform.tfvars, que esta excluido por .gitignore.
+# Ninguno de estos valores es secreto: son identificadores publicos que se
+# leen del panel de Cloudflare. El token NO va aqui, va en el entorno.
+
+account_id = ""
+zone_id    = ""
