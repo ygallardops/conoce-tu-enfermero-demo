@@ -50,6 +50,17 @@ La configuracion actual del panel se incorpora con bloques `import`, no
 recreando recursos. Recrear una regla de rate limiting abre una ventana sin
 proteccion, y recrear un registro DNS provoca corte de servicio.
 
+## Alcance dentro de la zona
+
+La zona `yersongallardo.com` aloja tambien el sitio personal. Terraform declara
+unicamente los recursos de la demostracion —su registro DNS, su ruta de Worker,
+su widget de Turnstile y la regla de limite que protege su API— y deja fuera los
+registros del sitio personal.
+
+Los ajustes de zona son la excepcion y merecen atencion: aplican a todo el
+dominio, no solo al subdominio de la demostracion. Un cambio en
+`min_tls_version` afecta igualmente al sitio personal.
+
 ## Uso
 
     cd infra
