@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Los avisos de seguridad se publican con el tiempo, no cuando se toca el
+  # codigo: sin esta ejecucion periodica main puede quedar expuesta durante
+  # semanas si no hay pull requests abiertas. Miercoles, para alternar con el
+  # DAST de los lunes.
+  schedule:
+    - cron: "41 6 * * 3"
+  workflow_dispatch:
 
 concurrency:
   group: devsecops-${{ github.workflow }}-${{ github.ref }}
