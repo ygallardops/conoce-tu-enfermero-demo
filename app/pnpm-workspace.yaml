@@ -8,3 +8,8 @@ allowBuilds:
 # corregida; db:generate forma parte de la validación para detectar incompatibilidad.
 overrides:
   '@esbuild-kit/core-utils>esbuild': 0.25.12
+  # ajv arrastra fast-uri <3.1.6 a través de la cadena webpack de
+  # react-server-dom-webpack (GHSA-jqff-g426-hqxp y tres avisos relacionados de
+  # confusión de host). Se fuerza la primera versión corregida; la arista es
+  # transitiva y solo interviene en el build.
+  fast-uri: 3.1.6
