@@ -50,7 +50,7 @@ jobs:
       - name: Instalar dependencias reproducibles
         run: pnpm install --frozen-lockfile
 
-      # `test` ejecuta el build ademas de las pruebas, asi que se despliega
+      # `test` ejecuta el build además de las pruebas, así que se despliega
       # exactamente el artefacto que acaba de pasarlas.
       - name: Construir y probar
         env:
@@ -59,7 +59,7 @@ jobs:
         run: pnpm run test
 
       # Ensayo previo: si la configuración apuntara a un Worker o una base
-      # distintos, aparece aqui y no despues de haber escrito en producción.
+      # distintos, aparece aquí y no después de haber escrito en producción.
       - name: Ensayar el despliegue
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -77,7 +77,7 @@ jobs:
           DEMO_BASE_URL: https://enfermeros-demo.yersongallardo.com
         run: pnpm run security:smoke:live
 
-      # El runbook exige registrar commit y version ID de cada despliegue.
+      # El runbook exige registrar commit y versión ID de cada despliegue.
       - name: Registrar la versión desplegada
         if: always()
         env:
