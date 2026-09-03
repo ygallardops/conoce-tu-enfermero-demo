@@ -18,6 +18,10 @@ concurrency:
 
 permissions:
   contents: read
+  # Necesarios para firmar la procedencia: el token OIDC identifica al
+  # workflow ante Sigstore y attestations permite registrar la firma.
+  id-token: write
+  attestations: write
 
 jobs:
   deploy:
@@ -57,6 +61,30 @@ jobs:
           PUBLIC_BRAND_PROFILE: ${{ vars.PUBLIC_BRAND_PROFILE || 'demo' }}
           PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
         run: pnpm run test
+
+      # El SBOM se genera del arbol ya construido, no de package.json, para
+      # que refleje lo que realmente se empaqueta.
+      - name: Generar SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          path: app
+          format: cyclonedx-json
+          artifact-name: sbom-cyclonedx.json
+          output-file: sbom-cyclonedx.json
+
+      # Firma que este bundle salio de este repositorio, este commit y este
+      # workflow. Verificable despues con: gh attestation verify
+      - name: Firmar la procedencia del bundle
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: app/dist/**
+
+      - name: Publicar el SBOM como artefacto
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom
+          path: sbom-cyclonedx.json
+          retention-days: 90
 
       # Ensayo previo: si la configuracion apuntara a un Worker o una base
       # distintos, aparece aqui y no despues de haber escrito en produccion.
