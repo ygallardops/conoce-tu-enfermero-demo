@@ -1,0 +1,96 @@
+name: Despliegue
+
+on:
+  push:
+    branches: [main]
+    # La documentacion interna, la infraestructura del borde y los ADR no
+    # cambian el Worker. Filtrar evita despliegues sin contenido nuevo.
+    paths:
+      - "app/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+# Un despliegue no se cancela a mitad: dejar el Worker a medias es peor que
+# esperar. Las ejecuciones se encolan.
+concurrency:
+  group: despliegue-produccion
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Desplegar y verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # El environment exige aprobacion manual antes de ejecutar el job y es
+    # donde viven las credenciales, fuera del alcance del repositorio.
+    environment:
+      name: production
+      url: https://enfermeros-demo.yersongallardo.com
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Obtener codigo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Activar pnpm fijado
+        run: corepack enable && corepack prepare pnpm@11.16.0 --activate
+
+      - name: Instalar dependencias reproducibles
+        run: pnpm install --frozen-lockfile
+
+      # `test` ejecuta el build ademas de las pruebas, asi que se despliega
+      # exactamente el artefacto que acaba de pasarlas.
+      - name: Construir y probar
+        env:
+          PUBLIC_BRAND_PROFILE: ${{ vars.PUBLIC_BRAND_PROFILE || 'demo' }}
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
+        run: pnpm run test
+
+      # Ensayo previo: si la configuracion apuntara a un Worker o una base
+      # distintos, aparece aqui y no despues de haber escrito en produccion.
+      - name: Ensayar el despliegue
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy --dry-run
+
+      - name: Desplegar
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy
+
+      - name: Verificar la demo desplegada
+        env:
+          DEMO_BASE_URL: https://enfermeros-demo.yersongallardo.com
+        run: pnpm run security:smoke:live
+
+      # El runbook exige registrar commit y version ID de cada despliegue.
+      - name: Registrar la version desplegada
+        if: always()
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          {
+            echo "### Despliegue"
+            echo ""
+            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Resultado: ${{ job.status }}"
+            echo ""
+            echo '```'
+            pnpm exec wrangler deployments list 2>&1 | head -20 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
