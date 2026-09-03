@@ -8,6 +8,8 @@ Prototipo serverless y seguro para sustituir el validador público de colegiatur
 
 > **Demo personal no oficial.** La aplicación y su línea base de seguridad están desplegadas. Todos los nombres, fotografías y registros son sintéticos; el servicio no consulta el padrón real ni emite verificaciones oficiales.
 
+[![Consulta pública de colegiatura en la demostración desplegada](.github/media/demo.png)](https://enfermeros-demo.yersongallardo.com/)
+
 - [Abrir la demostración](https://enfermeros-demo.yersongallardo.com/)
 - [Consultar el contrato OpenAPI](openapi/consulta-api.yaml)
 - [Revisar la política de seguridad](SECURITY.md)
