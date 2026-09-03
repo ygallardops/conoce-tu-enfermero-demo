@@ -67,6 +67,12 @@ infra/.terraform.lock.hcl.bak
 crash.log
 crash.*.log
 
+# Salida de las pruebas de interfaz
+app/test-results/
+app/playwright-report/
+app/blob-report/
+app/.playwright/
+
 # Logs y temporales
 *.log
 *.tmp
