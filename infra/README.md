@@ -1,6 +1,6 @@
 # Infraestructura del borde
 
-Configuracion de Cloudflare como codigo. Cubre lo que hasta ahora vivia
+Configuración de Cloudflare como código. Cubre lo que hasta ahora vivia
 unicamente en el panel y no era ni reproducible ni auditable: reglas de rate
 limiting y WAF, DNS, ajustes de zona, el widget de Turnstile y la ruta del
 Worker.
@@ -8,7 +8,7 @@ Worker.
 ## Que gestiona cada herramienta
 
 El reparto es estricto a proposito. Dos herramientas compitiendo por el mismo
-recurso terminan borrandose la configuracion entre despliegues.
+recurso terminan borrandose la configuración entre despliegues.
 
 | Recurso                        | Dueno      |
 | ------------------------------ | ---------- |
@@ -16,13 +16,13 @@ recurso terminan borrandose la configuracion entre despliegues.
 | DNS, ajustes de zona, TLS      | Terraform  |
 | Widget de Turnstile            | Terraform  |
 | Ruta y dominio del Worker      | Terraform  |
-| Codigo del Worker              | `wrangler` |
+| Código del Worker              | `wrangler` |
 | Bindings del Worker, vars      | `wrangler` |
 | Esquema y migraciones de D1    | `drizzle`  |
 | Contenido de D1                | `scripts/data` |
 
 Terraform no toca el Worker ni el esquema de la base. Si un recurso aparece en
-`wrangler.jsonc`, no se declara aqui.
+`wrangler.jsonc`, no se declara aquí.
 
 ## Estado
 
@@ -46,19 +46,19 @@ para aplicar.
 
 ## Recursos existentes
 
-La configuracion actual del panel se incorpora con bloques `import`, no
+La configuración actual del panel se incorpora con bloques `import`, no
 recreando recursos. Recrear una regla de rate limiting abre una ventana sin
-proteccion, y recrear un registro DNS provoca corte de servicio.
+protección, y recrear un registro DNS provoca corte de servicio.
 
 ## Alcance dentro de la zona
 
-La zona `yersongallardo.com` aloja tambien el sitio personal. Terraform declara
-unicamente los recursos de la demostracion —su registro DNS, su ruta de Worker,
-su widget de Turnstile y la regla de limite que protege su API— y deja fuera los
+La zona `yersongallardo.com` aloja también el sitio personal. Terraform declara
+unicamente los recursos de la demostración —su registro DNS, su ruta de Worker,
+su widget de Turnstile y la regla de límite que protege su API— y deja fuera los
 registros del sitio personal.
 
-Los ajustes de zona son la excepcion y merecen atencion: aplican a todo el
-dominio, no solo al subdominio de la demostracion. Un cambio en
+Los ajustes de zona son la excepcion y merecen atención: aplican a todo el
+dominio, no solo al subdominio de la demostración. Un cambio en
 `min_tls_version` afecta igualmente al sitio personal.
 
 ## Uso
@@ -68,5 +68,5 @@ dominio, no solo al subdominio de la demostracion. Un cambio en
     terraform plan
 
 Un `plan` limpio sobre la infraestructura existente —sin cambios pendientes— es
-la senal de que la importacion refleja la realidad. Ese es el objetivo de la
+la senal de que la importación refleja la realidad. Ese es el objetivo de la
 primera iteracion: describir lo que ya hay, no cambiarlo.
