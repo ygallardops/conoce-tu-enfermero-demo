@@ -3,7 +3,7 @@ name: Despliegue
 on:
   push:
     branches: [main]
-    # La documentación interna, la infraestructura del borde y los ADR no
+    # La documentacion interna, la infraestructura del borde y los ADR no
     # cambian el Worker. Filtrar evita despliegues sin contenido nuevo.
     paths:
       - "app/**"
@@ -24,7 +24,7 @@ jobs:
     name: Desplegar y verificar
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # El environment exige aprobación manual antes de ejecutar el job y es
+    # El environment exige aprobacion manual antes de ejecutar el job y es
     # donde viven las credenciales, fuera del alcance del repositorio.
     environment:
       name: production
@@ -33,7 +33,7 @@ jobs:
       run:
         working-directory: app
     steps:
-      - name: Obtener código
+      - name: Obtener codigo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -58,8 +58,8 @@ jobs:
           PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
         run: pnpm run test
 
-      # Ensayo previo: si la configuración apuntara a un Worker o una base
-      # distintos, aparece aqui y no despues de haber escrito en producción.
+      # Ensayo previo: si la configuracion apuntara a un Worker o una base
+      # distintos, aparece aqui y no despues de haber escrito en produccion.
       - name: Ensayar el despliegue
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -78,7 +78,7 @@ jobs:
         run: pnpm run security:smoke:live
 
       # El runbook exige registrar commit y version ID de cada despliegue.
-      - name: Registrar la versión desplegada
+      - name: Registrar la version desplegada
         if: always()
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
