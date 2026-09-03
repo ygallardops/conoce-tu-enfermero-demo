@@ -98,6 +98,17 @@ jobs:
           DEMO_BASE_URL: https://enfermeros-demo.yersongallardo.com
         run: pnpm run security:smoke:live
 
+      # El smoke comprueba cabeceras y contrato HTTP. Estas pruebas cubren lo
+      # que ve el publico: que la verificacion anti-bots bloquee el envio, que
+      # el bloque de resultados no aparezca antes de consultar y que el
+      # formulario siga siendo operable con teclado.
+      - name: Instalar el navegador de pruebas
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Probar la interfaz desplegada
+        env:
+          DEMO_BASE_URL: https://enfermeros-demo.yersongallardo.com
+        run: pnpm run test:e2e
       # El runbook exige registrar commit y version ID de cada despliegue.
       - name: Registrar la version desplegada
         if: always()

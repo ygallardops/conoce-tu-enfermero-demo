@@ -17,7 +17,8 @@
     "data:verify": "node scripts/data/verify-demo.mjs",
     "data:import:check": "node scripts/data/import-d1.mjs data/demo/canonical/padron-snapshot.json",
     "data:local:init": "node scripts/data/seed-local-d1.mjs",
-    "security:smoke:live": "node scripts/security/smoke-live.mjs"
+    "security:smoke:live": "node scripts/security/smoke-live.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
@@ -28,6 +29,7 @@
     "@cloudflare/vite-plugin": "1.54.2",
     "@eslint/js": "9.39.5",
     "@next/eslint-plugin-next": "16.3.3",
+    "@playwright/test": "1.56.1",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "22.20.1",
     "@types/react": "19.2.18",
