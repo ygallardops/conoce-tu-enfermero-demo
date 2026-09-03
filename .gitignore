@@ -55,6 +55,18 @@ PROJECT.md
 docs/
 .private/
 
+# Estado y credenciales de Terraform
+# El estado guarda en claro todo valor que Terraform lee o escribe, incluidos
+# los secretos. Vive en el backend remoto, nunca en el repositorio.
+infra/.terraform/
+infra/.terraform.lock.hcl.bak
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+
 # Logs y temporales
 *.log
 *.tmp
