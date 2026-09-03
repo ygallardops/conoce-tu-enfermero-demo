@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Reportar una vulnerabilidad
+    url: https://github.com/ygallardops/conoce-tu-enfermero-demo/security/advisories/new
+    about: Los hallazgos de seguridad se reportan en privado, nunca en un issue público.
+  - name: Política de seguridad
+    url: https://github.com/ygallardops/conoce-tu-enfermero-demo/blob/main/SECURITY.md
+    about: Alcance soportado, qué incluir en un reporte y qué no publicar nunca.

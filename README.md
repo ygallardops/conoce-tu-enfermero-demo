@@ -8,6 +8,8 @@ Prototipo serverless y seguro para sustituir el validador público de colegiatur
 
 > **Demo personal no oficial.** La aplicación y su línea base de seguridad están desplegadas. Todos los nombres, fotografías y registros son sintéticos; el servicio no consulta el padrón real ni emite verificaciones oficiales.
 
+[![Consulta pública de colegiatura en la demostración desplegada](.github/media/demo.png)](https://enfermeros-demo.yersongallardo.com/)
+
 - [Abrir la demostración](https://enfermeros-demo.yersongallardo.com/)
 - [Consultar el contrato OpenAPI](openapi/consulta-api.yaml)
 - [Revisar la política de seguridad](SECURITY.md)
@@ -62,6 +64,27 @@ Las reglas WAF administradas no están habilitadas porque requieren un plan supe
 
 ## DevSecOps
 
+```mermaid
+flowchart TD
+    PR["Pull request"] --> Q["Lint, pruebas y build"]
+    PR --> A["pnpm audit del lockfile"]
+    PR --> S["CodeQL security-extended"]
+    PR --> R["Dependency Review"]
+    Q --> M["main protegida<br/>los cuatro checks son bloqueantes"]
+    A --> M
+    S --> M
+    R --> M
+    M --> AP{"Aprobación manual<br/>environment production"}
+    AP --> B["Build y pruebas"]
+    B --> SB["SBOM CycloneDX"]
+    SB --> FP["Firma de procedencia"]
+    FP --> DR["wrangler deploy --dry-run"]
+    DR --> DP["Despliegue"]
+    DP --> SM["Smoke HTTP<br/>contra el dominio real"]
+    W(["Programado semanal"]) --> ZAP["OWASP ZAP Baseline"]
+    W --> AU["Auditoría del lockfile"]
+```
+
 | Control | Ejecución | Comportamiento |
 | --- | --- | --- |
 | Datos, lint, pruebas y build | Push y pull request hacia `main` | Bloqueante |
@@ -112,18 +135,18 @@ pnpm run dev
 
 ## Configuración
 
-| Variable o secreto | Uso |
-| --- | --- |
-| `PUBLIC_BRAND_PROFILE` | Perfil visual público: `demo` es el valor seguro predeterminado. |
-| `PUBLIC_TURNSTILE_SITE_KEY` | Clave pública del widget Turnstile. |
-| `TURNSTILE_SECRET_KEY` | Secreto del Worker para validar Turnstile; nunca se guarda en Git. |
-| `TURNSTILE_EXPECTED_HOSTNAME` | Host público exacto que debe acreditar Siteverify. |
-| `TURNSTILE_EXPECTED_ACTION` | Acción exacta esperada para la consulta pública. |
-| `ALLOWED_FRAME_ANCESTORS` | Lista opcional de orígenes HTTPS autorizados para iframe; sin valor, se deniega la incrustación. |
-| `DEMO_BASE_URL` | Variable de GitHub Actions para cambiar el destino del DAST. |
-| `CLOUDFLARE_API_TOKEN` | Secreto de privilegio mínimo usado únicamente por el CLI de ingesta remota. |
-| `CLOUDFLARE_ACCOUNT_ID` | Cuenta destino para una ingesta explícitamente autorizada. |
-| `CLOUDFLARE_D1_DATABASE_ID` | Base D1 destino para una ingesta explícitamente autorizada. |
+| Variable o secreto | Dónde vive | Uso |
+| --- | --- | --- |
+| `PUBLIC_BRAND_PROFILE` | Build | Perfil visual público: `demo` es el valor seguro predeterminado. |
+| `PUBLIC_TURNSTILE_SITE_KEY` | Build | Clave pública del widget Turnstile. |
+| `TURNSTILE_SECRET_KEY` | `wrangler secret` | Secreto del Worker para validar Turnstile; nunca se guarda en Git. |
+| `TURNSTILE_EXPECTED_HOSTNAME` | `wrangler.jsonc` | Host público exacto que debe acreditar Siteverify. |
+| `TURNSTILE_EXPECTED_ACTION` | `wrangler.jsonc` | Acción exacta esperada para la consulta pública. |
+| `ALLOWED_FRAME_ANCESTORS` | `wrangler.jsonc` | Lista opcional de orígenes HTTPS autorizados para iframe; sin valor, se deniega la incrustación. |
+| `DEMO_BASE_URL` | Variable de Actions | Variable de GitHub Actions para cambiar el destino del DAST. |
+| `CLOUDFLARE_API_TOKEN` | Entorno local o environment | Secreto de privilegio mínimo usado únicamente por el CLI de ingesta remota. |
+| `CLOUDFLARE_ACCOUNT_ID` | Entorno local o environment | Cuenta destino para una ingesta explícitamente autorizada. |
+| `CLOUDFLARE_D1_DATABASE_ID` | Entorno local | Base D1 destino para una ingesta explícitamente autorizada. |
 
 El ejemplo local está en [`app/.env.example`](app/.env.example). No copie secretos reales a archivos versionados.
 
@@ -134,6 +157,7 @@ La ingesta remota permanece desactivada por defecto. El CLI solo escribe cuando 
 - Implementado: contratos ejecutables, esquema D1, datos sintéticos y adaptadores equivalentes.
 - Desplegado: consulta accesible, D1, Turnstile y metadatos para vistas previas sociales.
 - Operativo: cabeceras defensivas, publicación atómica, rate limiting, observabilidad, DAST bloqueante y protección de `main`.
+- Plataforma: configuración del borde declarada en Terraform, despliegue continuo con aprobación manual, SBOM y firma de procedencia en cada publicación.
 - Próximo paso institucional: adaptar el origen real, validar el catálogo oficial y preparar la sustitución controlada de `/validar/` cuando el CEP proporcione la información y autorizaciones necesarias.
 
 ## Alcance y uso de marca
