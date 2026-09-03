@@ -1,9 +1,9 @@
 # Limite de peticiones de la API publica.
 #
-# En plan Free, Cloudflare cuenta por centro de datos: la característica
-# cf.colo.id forma parte de la clave, así que el límite efectivo global es
+# En plan Free, Cloudflare cuenta por centro de datos: la caracteristica
+# cf.colo.id forma parte de la clave, asi que el limite efectivo global es
 # 5 peticiones por cada colo alcanzado, no 5 en total. Turnstile es la
-# protección principal; este límite acota el abuso desde una sola ruta.
+# proteccion principal; este limite acota el abuso desde una sola ruta.
 resource "cloudflare_ruleset" "rate_limit" {
   zone_id = var.zone_id
   name    = "default"
@@ -25,7 +25,7 @@ resource "cloudflare_ruleset" "rate_limit" {
   }]
 }
 
-# Registro del hostname de la demostración. El contenido es 192.0.2.1
+# Registro del hostname de la demostracion. El contenido es 192.0.2.1
 # (TEST-NET-1, RFC 5737): no existe origen real, todo el trafico lo atiende
 # el Worker. El registro debe permanecer proxied o la ruta no se aplica.
 resource "cloudflare_dns_record" "demo" {
@@ -37,7 +37,7 @@ resource "cloudflare_dns_record" "demo" {
   ttl     = 1
 }
 
-# Ruta que publica el Worker en el hostname. El código del Worker lo
+# Ruta que publica el Worker en el hostname. El codigo del Worker lo
 # despliega wrangler; Terraform solo declara donde queda expuesto.
 resource "cloudflare_workers_route" "demo" {
   zone_id = var.zone_id

@@ -9,13 +9,13 @@ variable "zone_id" {
 }
 
 variable "demo_hostname" {
-  description = "Hostname publico de la demostración."
+  description = "Hostname publico de la demostracion."
   type        = string
   default     = "enfermeros-demo.yersongallardo.com"
 }
 
 variable "worker_name" {
-  description = "Nombre del Worker desplegado por wrangler. Terraform no gestiona su código, solo la ruta que lo publica."
+  description = "Nombre del Worker desplegado por wrangler. Terraform no gestiona su codigo, solo la ruta que lo publica."
   type        = string
   default     = "conoce-tu-enfermero-demo"
 }

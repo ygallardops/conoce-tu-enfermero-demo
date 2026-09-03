@@ -3,7 +3,7 @@
 #
 # No son secretos —son identificadores que se leen del panel— pero se
 # mantienen fuera del repositorio publico para no facilitar el reconocimiento
-# de la cuenta. El token NO va aquí: se lee de CLOUDFLARE_API_TOKEN.
+# de la cuenta. El token NO va aqui: se lee de CLOUDFLARE_API_TOKEN.
 
 account_id = ""
 zone_id    = ""
