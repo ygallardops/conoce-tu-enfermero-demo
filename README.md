@@ -85,6 +85,8 @@ Los recursos existentes se incorporaron mediante importación, sin recrearlos. E
 
 El reparto de responsabilidades es estricto. Terraform no gestiona el Worker ni el esquema de la base: el código y sus bindings son de `wrangler` y las migraciones de Drizzle. Un recurso declarado en `wrangler.jsonc` no se declara en `infra/`.
 
+Cada despliegue genera un SBOM en formato CycloneDX y firma la procedencia del bundle publicado, de modo que se puede verificar criptográficamente que salió de este repositorio, de un commit concreto y de este workflow. La verificación se hace con `gh attestation verify`.
+
 El despliegue se ejecuta desde GitHub Actions contra un environment protegido que exige aprobación manual. Cada ejecución construye, pasa las pruebas, ensaya el despliegue en seco, publica y verifica la demo con un smoke HTTP contra el dominio real, dejando registro del commit y de la versión desplegada. Las credenciales son un token de mínimo privilegio guardado en el environment, no en el repositorio.
 
 ## Ejecución local
