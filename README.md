@@ -58,6 +58,7 @@ Las reglas WAF administradas no están habilitadas porque requieren un plan supe
 - TypeScript, React 19, vinext, Drizzle ORM y SQLite/D1.
 - Node.js 22 y pnpm fijado mediante Corepack.
 - GitHub Actions, CodeQL, Dependency Review, Dependabot, secret scanning y OWASP ZAP.
+- Terraform para la configuración del borde, con estado remoto y proveedor fijado.
 
 ## DevSecOps
 
@@ -69,10 +70,22 @@ Las reglas WAF administradas no están habilitadas porque requieren un plan supe
 | CodeQL `security-extended` | Push y pull request | Ejecuta SAST; los hallazgos nuevos se revisan antes de integrar |
 | Dependabot | Semanal | Propone actualizaciones de npm y GitHub Actions |
 | OWASP ZAP Baseline + smoke HTTP | Semanal y manual | Bloquea alertas no aceptadas y verifica cabeceras/contrato de rutas críticas |
+| Auditoría del lockfile programada | Semanal | Detecta avisos publicados con `main` en reposo, sin depender de que haya pull requests abiertas |
+| Despliegue | Push a `main` que toque `app/` | Exige aprobación manual y verifica la demo publicada |
 
 La rama `main` está protegida. Los cambios se integran mediante pull request y se someten a controles de calidad y seguridad. Las Actions externas se fijan a commits inmutables y Dependabot conserva comentarios de versión para proponer su renovación.
 
 El proyecto publica un [registro de mantenimiento de seguridad](SECURITY-MAINTENANCE.md) con fechas, alcance y evidencia de remediación, sin incluir payloads, secretos ni instrucciones de explotación.
+
+## Infraestructura y despliegue
+
+La configuración del borde se declara como código en [`infra/`](infra/) con Terraform: la regla de rate limiting, el registro DNS de la demo, la ruta del Worker, el widget de Turnstile y los ajustes de zona. Un cambio hecho desde el panel de Cloudflare aparece como diferencia en el siguiente `terraform plan`, de modo que la configuración deja de ser un estado invisible.
+
+Los recursos existentes se incorporaron mediante importación, sin recrearlos. El estado vive en un backend remoto con bloqueo y nunca en el repositorio: `terraform.tfstate` guarda en claro todo valor que Terraform lee.
+
+El reparto de responsabilidades es estricto. Terraform no gestiona el Worker ni el esquema de la base: el código y sus bindings son de `wrangler` y las migraciones de Drizzle. Un recurso declarado en `wrangler.jsonc` no se declara en `infra/`.
+
+El despliegue se ejecuta desde GitHub Actions contra un environment protegido que exige aprobación manual. Cada ejecución construye, pasa las pruebas, ensaya el despliegue en seco, publica y verifica la demo con un smoke HTTP contra el dominio real, dejando registro del commit y de la versión desplegada. Las credenciales son un token de mínimo privilegio guardado en el environment, no en el repositorio.
 
 ## Ejecución local
 
