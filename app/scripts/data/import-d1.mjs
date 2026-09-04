@@ -7,6 +7,7 @@ import { parseAllowedPhotoHosts, validateCanonicalSnapshot } from "./snapshot-va
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const defaultSnapshotPath = resolve(scriptDir, "../../data/demo/canonical/padron-snapshot.json");
 const defaultChunkSize = 100;
+const maxRecordCountVariation = 0.1;
 
 export const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS padron_snapshots (
@@ -103,7 +104,7 @@ export function buildImportPlan(snapshot, options = {}) {
         [version],
       ),
       statement(
-        `SELECT dataset_version, generated_at
+        `SELECT dataset_version, generated_at, record_count
         FROM padron_snapshots WHERE status = 'active'
         ORDER BY generated_at DESC LIMIT 1`,
       ),
@@ -167,6 +168,7 @@ export function parseCliArgs(argv) {
     apply: false,
     chunkSize: defaultChunkSize,
     confirmDataset: null,
+    confirmVariation: null,
     snapshotPath: defaultSnapshotPath,
     help: false,
   };
@@ -176,6 +178,7 @@ export function parseCliArgs(argv) {
     if (argument === "--apply") options.apply = true;
     else if (argument === "--help" || argument === "-h") options.help = true;
     else if (argument === "--confirm-dataset") options.confirmDataset = argv[++index] ?? null;
+    else if (argument === "--confirm-variation") options.confirmVariation = argv[++index] ?? null;
     else if (argument === "--chunk-size") options.chunkSize = Number(argv[++index]);
     else if (!argument.startsWith("-") && !positionalSnapshot) {
       options.snapshotPath = resolve(argument);
@@ -183,6 +186,32 @@ export function parseCliArgs(argv) {
     } else throw new Error(`Argumento no reconocido: ${argument}`);
   }
   return options;
+}
+
+export function calculateRecordCountVariation(activeCount, candidateCount) {
+  const previous = Number(activeCount);
+  if (!Number.isFinite(previous) || previous <= 0) return null;
+  return Math.abs(candidateCount - previous) / previous;
+}
+
+export function formatVariation(ratio) {
+  return (Math.round(ratio * 1000) / 10).toFixed(1);
+}
+
+function assertRecordCountVariation(snapshot, active, confirmVariation) {
+  const variation = calculateRecordCountVariation(active?.record_count, snapshot.record_count);
+  if (variation === null) return { previousRecordCount: null, variation: null };
+  const observed = formatVariation(variation);
+  if (variation > maxRecordCountVariation && confirmVariation !== observed) {
+    const direction = snapshot.record_count < Number(active.record_count) ? "reduce" : "amplía";
+    throw new Error(
+      `El candidato ${direction} el padrón un ${observed} % respecto al activo `
+      + `(${active.record_count} -> ${snapshot.record_count} registros), por encima del `
+      + `${formatVariation(maxRecordCountVariation)} % admitido sin confirmación. `
+      + `Si el cambio es correcto, repite con --confirm-variation ${observed}.`,
+    );
+  }
+  return { previousRecordCount: Number(active.record_count), variation: observed };
 }
 
 function cloudflareError(payload, status) {
@@ -258,6 +287,7 @@ export async function applySnapshot(snapshot, client, options = {}) {
   if (active && Date.parse(snapshot.generated_at) <= Date.parse(active.generated_at)) {
     throw new Error("El snapshot candidato no es más reciente que el activo.");
   }
+  const delta = assertRecordCountVariation(snapshot, active, options.confirmVariation ?? null);
 
   const stagingStatement = existing ? plan.retryStaging : plan.insertStaging;
   stagingStatement.params[0] = existing ? importedAt : stagingStatement.params[0];
@@ -279,7 +309,7 @@ export async function applySnapshot(snapshot, client, options = {}) {
   ) {
     throw new Error("D1 no confirmó la activación del snapshot candidato.");
   }
-  return { ...plan.summary, outcome: "activated" };
+  return { ...plan.summary, ...delta, outcome: "activated" };
 }
 
 function usage() {
@@ -288,6 +318,12 @@ function usage() {
   node scripts/data/import-d1.mjs [snapshot.json] --apply --confirm-dataset VERSION
 
 Sin --apply se ejecuta únicamente validación local y no se accede a la red.
+
+Un snapshot sin registros se rechaza siempre: retirar el padrón es otra
+operación. Si el candidato varía respecto al activo más de un
+${formatVariation(maxRecordCountVariation)} %, la ingesta se detiene e indica la cifra exacta; para seguir hay
+que repetirla con --confirm-variation y esa misma cifra. El umbral solo se
+comprueba con --apply, porque el dry-run no consulta el activo.
 
 PADRON_ALLOWED_PHOTO_HOSTS aprueba hosts para fotografías externas, separados
 por comas y sin esquema ni ruta. Sin esa variable la lista queda vacía y solo se
@@ -318,14 +354,18 @@ export async function runCli(argv, runtimeEnv = process.env) {
   });
   return {
     mode: "apply",
-    ...await applySnapshot(snapshot, client, { chunkSize: options.chunkSize, validationOptions }),
+    ...await applySnapshot(snapshot, client, {
+      chunkSize: options.chunkSize,
+      validationOptions,
+      confirmVariation: options.confirmVariation,
+    }),
   };
 }
 
 const invokedAsScript = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
 if (invokedAsScript) {
   runCli(process.argv.slice(2))
-    .then((result) => console.log(JSON.stringify(result, null, 2)))
+    .then((result) => console.log(result.help ?? JSON.stringify(result, null, 2)))
     .catch((error) => {
       console.error(`Ingesta rechazada: ${error.message}`);
       process.exitCode = 1;

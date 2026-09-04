@@ -7,6 +7,8 @@ import test from "node:test";
 import {
   applySnapshot,
   buildImportPlan,
+  calculateRecordCountVariation,
+  formatVariation,
   parseCliArgs,
   readValidationOptions,
   runCli,
@@ -97,6 +99,34 @@ class ExistingSnapshotClient {
     }
     return statements.map(() => successfulResult());
   }
+}
+
+class ActiveSnapshotClient extends SuccessfulD1Client {
+  constructor(snapshot, { activeRecordCount, activeGeneratedAt = "2026-08-01T15:00:00.000Z" }) {
+    super(snapshot);
+    this.activeRecordCount = activeRecordCount;
+    this.activeGeneratedAt = activeGeneratedAt;
+  }
+
+  async query(statements) {
+    if (statements.length === 2 && statements[0].sql.includes("FROM padron_snapshots WHERE dataset_version")) {
+      this.calls.push(structuredClone(statements));
+      return [successfulResult(), successfulResult([{
+        dataset_version: "padron-anterior",
+        generated_at: this.activeGeneratedAt,
+        record_count: this.activeRecordCount,
+      }])];
+    }
+    return super.query(statements);
+  }
+}
+
+function truncatedSnapshot(snapshot, recordCount) {
+  const candidate = structuredClone(snapshot);
+  candidate.records = candidate.records.slice(0, recordCount);
+  candidate.record_count = candidate.records.length;
+  candidate.checksum_sha256 = calculateRecordsChecksum(candidate.records);
+  return candidate;
 }
 
 class IncompleteD1Client extends SuccessfulD1Client {
@@ -252,6 +282,68 @@ test("rechaza reactivar una versión retirada o sustituir una versión más reci
   });
   await assert.rejects(applySnapshot(candidate, staleClient), /no es más reciente que el activo/);
   assert.equal(staleClient.calls.length, 2);
+});
+
+test("un snapshot sin registros no es publicable por ninguna vía", async () => {
+  const snapshot = await demoSnapshot();
+  const vacio = truncatedSnapshot(snapshot, 0);
+
+  assert.equal(vacio.checksum_sha256, "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945");
+  assert.throws(() => validateCanonicalSnapshot(vacio), /sin registros no es publicable/);
+  assert.throws(() => buildImportPlan(vacio), /sin registros no es publicable/);
+  await withSnapshotFile(vacio, async (path) => {
+    await assert.rejects(runCli([path], {}), /sin registros no es publicable/);
+  });
+
+  const client = new ActiveSnapshotClient(vacio, { activeRecordCount: 60 });
+  await assert.rejects(applySnapshot(vacio, client), /sin registros no es publicable/);
+  assert.equal(client.calls.length, 0);
+});
+
+test("una variación grande del padrón exige confirmación con la cifra observada", async () => {
+  const snapshot = await demoSnapshot();
+  const candidate = truncatedSnapshot(snapshot, 40);
+
+  const blocked = new ActiveSnapshotClient(candidate, { activeRecordCount: 60 });
+  await assert.rejects(
+    applySnapshot(candidate, blocked, { chunkSize: 25 }),
+    /reduce el padrón un 33\.3 %.*60 -> 40 registros.*--confirm-variation 33\.3/s,
+  );
+  assert.ok(blocked.calls.flat().every((item) => !item.sql.startsWith("INSERT INTO")));
+  assert.equal(parseCliArgs(["--confirm-variation", "33.3"]).confirmVariation, "33.3");
+  assert.equal(parseCliArgs([]).confirmVariation, null);
+
+  const wrong = new ActiveSnapshotClient(candidate, { activeRecordCount: 60 });
+  await assert.rejects(
+    applySnapshot(candidate, wrong, { chunkSize: 25, confirmVariation: "33" }),
+    /--confirm-variation 33\.3/,
+  );
+
+  const confirmed = new ActiveSnapshotClient(candidate, { activeRecordCount: 60 });
+  const result = await applySnapshot(candidate, confirmed, { chunkSize: 25, confirmVariation: "33.3" });
+  assert.equal(result.outcome, "activated");
+  assert.equal(result.previousRecordCount, 60);
+  assert.equal(result.variation, "33.3");
+});
+
+test("una variación dentro del umbral no interrumpe la publicación", async () => {
+  const snapshot = await demoSnapshot();
+  const candidate = truncatedSnapshot(snapshot, 57);
+  const client = new ActiveSnapshotClient(candidate, { activeRecordCount: 60 });
+  const result = await applySnapshot(candidate, client, { chunkSize: 25 });
+
+  assert.equal(result.outcome, "activated");
+  assert.equal(result.variation, "5.0");
+
+  const primeraCarga = new SuccessfulD1Client(snapshot);
+  const inicial = await applySnapshot(snapshot, primeraCarga, { chunkSize: 25 });
+  assert.equal(inicial.outcome, "activated");
+  assert.equal(inicial.previousRecordCount, null);
+  assert.equal(inicial.variation, null);
+
+  assert.equal(calculateRecordCountVariation(60, 66), 0.1);
+  assert.equal(calculateRecordCountVariation(0, 60), null);
+  assert.equal(formatVariation(0.11667), "11.7");
 });
 
 test("una carga incompleta permanece sin activación", async () => {

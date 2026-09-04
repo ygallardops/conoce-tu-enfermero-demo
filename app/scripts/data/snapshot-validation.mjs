@@ -119,6 +119,9 @@ export function validateCanonicalSnapshot(snapshot, options = {}) {
   if (!Number.isInteger(snapshot.record_count) || snapshot.record_count < 0 || snapshot.record_count > 1_000_000) {
     fail("record_count: valor inválido.");
   }
+  if (snapshot.record_count === 0) {
+    fail("record_count: un snapshot sin registros no es publicable; retirar el padrón es otra operación.");
+  }
   if (!/^[a-f0-9]{64}$/.test(snapshot.checksum_sha256)) fail("checksum_sha256: formato inválido.");
   if (!Array.isArray(snapshot.records)) fail("records: debe ser un arreglo.");
   if (snapshot.record_count !== snapshot.records.length) fail("record_count: no coincide con records.");
