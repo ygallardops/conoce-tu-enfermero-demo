@@ -19,6 +19,7 @@ const recordFields = [
   "foto_url",
 ];
 const unsafeFormatCharacters = /[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/u;
+const photoHostPattern = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
 
 function fail(message) {
   throw new Error(message);
@@ -80,6 +81,20 @@ function assertPhotoUrl(value, field, allowedPhotoHosts) {
   ) {
     fail(`${field}: solo se permiten URL HTTPS de hosts aprobados y sin credenciales.`);
   }
+}
+
+export function parseAllowedPhotoHosts(value) {
+  if (value === undefined || value === null) return [];
+  const hosts = [];
+  for (const entry of String(value).split(",")) {
+    const host = entry.trim().toLowerCase();
+    if (!host) continue;
+    if (host.length > 253 || !photoHostPattern.test(host)) {
+      fail(`hosts de fotografía: "${entry.trim()}" no es un nombre de host válido; se espera solo el host, sin esquema, puerto, ruta ni comodines.`);
+    }
+    if (!hosts.includes(host)) hosts.push(host);
+  }
+  return hosts;
 }
 
 export function calculateRecordsChecksum(records) {
