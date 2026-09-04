@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { buildImportPlan } from "./import-d1.mjs";
+import { buildImportPlan, readValidationOptions } from "./import-d1.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const appDir = resolve(scriptDir, "../..");
@@ -58,7 +58,7 @@ async function main() {
   if (!snapshot.source.startsWith("demo:")) {
     throw new Error("La inicialización local acepta únicamente snapshots sintéticos demo.");
   }
-  const plan = buildImportPlan(snapshot);
+  const plan = buildImportPlan(snapshot, { validationOptions: readValidationOptions() });
   const importedAt = new Date().toISOString();
   const staging = {
     sql: `INSERT INTO padron_snapshots (

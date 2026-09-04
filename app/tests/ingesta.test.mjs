@@ -1,20 +1,38 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
   applySnapshot,
   buildImportPlan,
   parseCliArgs,
+  readValidationOptions,
   runCli,
 } from "../scripts/data/import-d1.mjs";
-import { calculateRecordsChecksum, validateCanonicalSnapshot } from "../scripts/data/snapshot-validation.mjs";
+import {
+  calculateRecordsChecksum,
+  parseAllowedPhotoHosts,
+  validateCanonicalSnapshot,
+} from "../scripts/data/snapshot-validation.mjs";
 
 async function demoSnapshot() {
   return JSON.parse(await readFile(
     new URL("../data/demo/canonical/padron-snapshot.json", import.meta.url),
     "utf8",
   ));
+}
+
+async function withSnapshotFile(snapshot, run) {
+  const directory = await mkdtemp(join(tmpdir(), "cep-snapshot-"));
+  const path = join(directory, "snapshot.json");
+  try {
+    await writeFile(path, JSON.stringify(snapshot), "utf8");
+    return await run(path);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 }
 
 function successfulResult(results = []) {
@@ -161,6 +179,41 @@ test("el CLI usa dry-run por defecto y exige confirmación para aplicar", async 
     runCli([snapshotPath, "--apply", "--confirm-dataset", "otra-version"], {}),
     /confirm-dataset debe coincidir/,
   );
+});
+
+test("el CLI aprueba fotografías externas solo a través de la variable de entorno", async () => {
+  const snapshot = await demoSnapshot();
+  snapshot.records[0].foto_url = "https://imagenes.example/foto.webp";
+  snapshot.checksum_sha256 = calculateRecordsChecksum(snapshot.records);
+
+  await withSnapshotFile(snapshot, async (path) => {
+    await assert.rejects(runCli([path], {}), /hosts aprobados/);
+
+    const approved = await runCli([path], { PADRON_ALLOWED_PHOTO_HOSTS: " Imagenes.Example , imagenes.example " });
+    assert.equal(approved.mode, "dry-run");
+    assert.equal(approved.recordCount, 60);
+    assert.deepEqual(approved.allowedPhotoHosts, ["imagenes.example"]);
+  });
+});
+
+test("una lista de hosts mal formada detiene el dry-run antes de tocar la red", async () => {
+  const snapshotPath = fileURLToPath(new URL("../data/demo/canonical/padron-snapshot.json", import.meta.url));
+  const rejected = ["https://cep.org.pe", "cep.org.pe/fotos", "cep.org.pe:443", "*.cep.org.pe"];
+
+  for (const value of rejected) {
+    await assert.rejects(
+      runCli([snapshotPath], { PADRON_ALLOWED_PHOTO_HOSTS: value }),
+      /no es un nombre de host válido/,
+      `debía rechazar ${value}`,
+    );
+  }
+
+  assert.deepEqual(readValidationOptions({}).allowedPhotoHosts, []);
+  assert.deepEqual(parseAllowedPhotoHosts("  "), []);
+  assert.deepEqual(parseAllowedPhotoHosts("fotos.cep.org.pe,CDN.cep.org.pe"), [
+    "fotos.cep.org.pe",
+    "cdn.cep.org.pe",
+  ]);
 });
 
 test("publica staging y activa solo después de verificar el conteo", async () => {

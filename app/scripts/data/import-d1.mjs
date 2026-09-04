@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { normalizeSearchValue } from "../../lib/consulta.mjs";
-import { validateCanonicalSnapshot } from "./snapshot-validation.mjs";
+import { parseAllowedPhotoHosts, validateCanonicalSnapshot } from "./snapshot-validation.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const defaultSnapshotPath = resolve(scriptDir, "../../data/demo/canonical/padron-snapshot.json");
@@ -59,7 +59,8 @@ export function buildImportPlan(snapshot, options = {}) {
   if (!Number.isInteger(chunkSize) || chunkSize < 1 || chunkSize > 250) {
     throw new Error("chunkSize debe estar entre 1 y 250.");
   }
-  const summary = validateCanonicalSnapshot(snapshot, options.validationOptions);
+  const validationOptions = options.validationOptions ?? {};
+  const summary = validateCanonicalSnapshot(snapshot, validationOptions);
   const recordStatements = snapshot.records.map((record) => statement(insertRecordSql, [
     snapshot.dataset_version,
     record.num_cep,
@@ -87,7 +88,12 @@ export function buildImportPlan(snapshot, options = {}) {
   )`;
 
   return {
-    summary: { ...summary, chunkSize, batchCount: Math.ceil(snapshot.record_count / chunkSize) },
+    summary: {
+      ...summary,
+      chunkSize,
+      batchCount: Math.ceil(snapshot.record_count / chunkSize),
+      allowedPhotoHosts: validationOptions.allowedPhotoHosts ?? [],
+    },
     schema: schemaStatements.map((sql) => statement(sql)),
     inspect: [
       statement(
@@ -281,14 +287,23 @@ function usage() {
   node scripts/data/import-d1.mjs [snapshot.json]
   node scripts/data/import-d1.mjs [snapshot.json] --apply --confirm-dataset VERSION
 
-Sin --apply se ejecuta únicamente validación local y no se accede a la red.`;
+Sin --apply se ejecuta únicamente validación local y no se accede a la red.
+
+PADRON_ALLOWED_PHOTO_HOSTS aprueba hosts para fotografías externas, separados
+por comas y sin esquema ni ruta. Sin esa variable la lista queda vacía y solo se
+admiten rutas propias del dominio.`;
+}
+
+export function readValidationOptions(runtimeEnv = process.env) {
+  return { allowedPhotoHosts: parseAllowedPhotoHosts(runtimeEnv.PADRON_ALLOWED_PHOTO_HOSTS) };
 }
 
 export async function runCli(argv, runtimeEnv = process.env) {
   const options = parseCliArgs(argv);
   if (options.help) return { help: usage() };
   const snapshot = JSON.parse(await readFile(options.snapshotPath, "utf8"));
-  const plan = buildImportPlan(snapshot, { chunkSize: options.chunkSize });
+  const validationOptions = readValidationOptions(runtimeEnv);
+  const plan = buildImportPlan(snapshot, { chunkSize: options.chunkSize, validationOptions });
   if (!options.apply) return { mode: "dry-run", ...plan.summary };
   if (options.confirmDataset !== snapshot.dataset_version) {
     throw new Error("--confirm-dataset debe coincidir exactamente con dataset_version.");
@@ -301,7 +316,10 @@ export async function runCli(argv, runtimeEnv = process.env) {
     accountId: runtimeEnv.CLOUDFLARE_ACCOUNT_ID,
     databaseId: runtimeEnv.CLOUDFLARE_D1_DATABASE_ID,
   });
-  return { mode: "apply", ...await applySnapshot(snapshot, client, { chunkSize: options.chunkSize }) };
+  return {
+    mode: "apply",
+    ...await applySnapshot(snapshot, client, { chunkSize: options.chunkSize, validationOptions }),
+  };
 }
 
 const invokedAsScript = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
