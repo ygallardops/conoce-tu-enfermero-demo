@@ -147,10 +147,13 @@ pnpm run dev
 | `CLOUDFLARE_API_TOKEN` | Entorno local o environment | Secreto de privilegio mínimo usado únicamente por el CLI de ingesta remota. |
 | `CLOUDFLARE_ACCOUNT_ID` | Entorno local o environment | Cuenta destino para una ingesta explícitamente autorizada. |
 | `CLOUDFLARE_D1_DATABASE_ID` | Entorno local | Base D1 destino para una ingesta explícitamente autorizada. |
+| `PADRON_ALLOWED_PHOTO_HOSTS` | Entorno local | Hosts HTTPS aprobados para fotografías externas, separados por comas. Vacía por defecto: sin ella solo se admiten rutas propias del dominio. |
 
 El ejemplo local está en [`app/.env.example`](app/.env.example). No copie secretos reales a archivos versionados.
 
 La ingesta remota permanece desactivada por defecto. El CLI solo escribe cuando recibe `--apply`, la confirmación exacta de `dataset_version` y las tres variables Cloudflare; el modo normal es un `dry-run` local. No ejecute `--apply` contra la demo sin una autorización operativa explícita.
+
+Dos controles adicionales protegen el padrón publicado. Un snapshot sin registros se rechaza siempre, porque publicar un padrón vacío nunca es una actualización y dejaría la consulta devolviendo «no encontrado» sin señal de error. Y una variación de más del 10 % en el número de registros respecto al activo detiene la ingesta antes de escribir nada e indica la cifra exacta: continuar exige repetir la operación con `--confirm-variation` transcribiendo esa cifra, de modo que una exportación truncada no llegue a producción sin que alguien la haya mirado.
 
 ## Estado y próximos pasos
 
