@@ -13,3 +13,12 @@ overrides:
   # confusión de host). Se fuerza la primera versión corregida; la arista es
   # transitiva y solo interviene en el build.
   fast-uri: 3.1.6
+  # miniflare fija sharp en 0.35.2 exacto, por lo que Dependabot no alcanza la
+  # versión corregida de GHSA-rgj7-g3m4-5g8c (libheif) y cierra el aviso como
+  # "security_update_not_possible". Se fuerza la arista; sharp solo interviene
+  # en el desarrollo local con miniflare, no viaja en el Worker desplegado.
+  'miniflare>sharp': 0.35.4
+  # eslint arrastra js-yaml <4.3.2 vía @eslint/eslintrc (GHSA-2883-xcg3-v3hh,
+  # consumo de CPU con merge keys vacías), con el mismo bloqueo de rango. La
+  # arista solo se usa al cargar la configuración de lint.
+  '@eslint/eslintrc>js-yaml': 4.3.2
