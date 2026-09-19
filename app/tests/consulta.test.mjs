@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 import { normalizeSearchValue, validateConsultaPayload } from "../lib/consulta.mjs";
 import { readRequestJson } from "../lib/http-request.mjs";
+import { SITEVERIFY_URL, verifyTurnstile } from "../lib/turnstile.mjs";
 
 async function fetchWorker(path, init = {}, overrides = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -164,12 +165,62 @@ test("la API devuelve un identificador de soporte sin exponer la consulta", asyn
 
   assert.match(source, /"x-request-id": requestId/);
   assert.match(source, /readRequestJson/);
-  assert.match(source, /AbortSignal\.timeout\(TURNSTILE_TIMEOUT_MS\)/);
-  assert.match(source, /TURNSTILE_EXPECTED_HOSTNAME/);
-  assert.match(source, /TURNSTILE_EXPECTED_ACTION/);
-  assert.match(source, /if \(!secret \|\| !expectedHostname \|\| !expectedAction\) return "unavailable"/);
   assert.doesNotMatch(source, /local-demo-token/);
   assert.doesNotMatch(source, /console\.(log|info|warn|error)/);
+});
+
+test("la verificación Turnstile exige éxito, hostname y acción, y falla cerrada", async () => {
+  const config = { secret: "s3cr3t", expectedHostname: "demo.example", expectedAction: "consulta_publica" };
+  const siteverify = (payload, init = {}) => async () => Response.json(payload, init);
+
+  const casos = [
+    ["éxito con hostname y acción esperados", siteverify({ success: true, hostname: "demo.example", action: "consulta_publica" }), "valid"],
+    ["siteverify rechaza el token", siteverify({ success: false, "error-codes": ["invalid-input-response"] }), "invalid"],
+    ["éxito resuelto en otro hostname", siteverify({ success: true, hostname: "atacante.example", action: "consulta_publica" }), "invalid"],
+    ["éxito resuelto para otra acción", siteverify({ success: true, hostname: "demo.example", action: "otra_accion" }), "invalid"],
+    ["éxito sin hostname ni acción", siteverify({ success: true }), "invalid"],
+    ["siteverify responde con error HTTP", siteverify({}, { status: 500 }), "unavailable"],
+    ["siteverify inalcanzable", async () => { throw new Error("network"); }, "unavailable"],
+  ];
+
+  for (const [motivo, fetchImpl, esperado] of casos) {
+    assert.equal(await verifyTurnstile("token", config, fetchImpl), esperado, motivo);
+  }
+
+  for (const ausente of ["secret", "expectedHostname", "expectedAction"]) {
+    let llamado = false;
+    const outcome = await verifyTurnstile("token", { ...config, [ausente]: undefined }, async () => {
+      llamado = true;
+      return Response.json({ success: true, hostname: "demo.example", action: "consulta_publica" });
+    });
+    assert.equal(outcome, "unavailable", `sin ${ausente} la verificación no está disponible`);
+    assert.equal(llamado, false, `sin ${ausente} no debe consultarse siteverify`);
+  }
+});
+
+test("la verificación Turnstile envía el secreto, el token y la IP del consultante", async () => {
+  const config = {
+    secret: "s3cr3t",
+    expectedHostname: "demo.example",
+    expectedAction: "consulta_publica",
+    remoteIp: "203.0.113.7",
+  };
+  let enviado;
+  const captura = async (url, init) => {
+    enviado = { url, form: init.body, signal: init.signal, method: init.method };
+    return Response.json({ success: true, hostname: "demo.example", action: "consulta_publica" });
+  };
+
+  assert.equal(await verifyTurnstile("token-de-prueba", config, captura), "valid");
+  assert.equal(enviado.url, SITEVERIFY_URL);
+  assert.equal(enviado.method, "POST");
+  assert.equal(enviado.form.get("secret"), "s3cr3t");
+  assert.equal(enviado.form.get("response"), "token-de-prueba");
+  assert.equal(enviado.form.get("remoteip"), "203.0.113.7");
+  assert.ok(enviado.signal instanceof AbortSignal);
+
+  await verifyTurnstile("token-de-prueba", { ...config, remoteIp: null }, captura);
+  assert.equal(enviado.form.get("remoteip"), null, "sin IP no se envía el campo remoteip");
 });
 
 test("la API limita Content-Type y tamaño antes de procesar JSON", async () => {
