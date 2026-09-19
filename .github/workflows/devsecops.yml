@@ -51,7 +51,10 @@ jobs:
       - name: Auditar el lockfile completo
         # Vinext empaqueta componentes declarados como devDependencies; una
         # auditoría --prod dejaría fuera parte de la superficie desplegada.
-        run: pnpm audit --audit-level high
+        # El umbral es el que SECURITY-MAINTENANCE.md exige como evidencia
+        # antes de integrar. No baja a low: con enforce_admins, un aviso bajo
+        # sin parche disponible bloquearía cualquier integración en main.
+        run: pnpm audit --audit-level moderate
 
   dependency-review:
     name: Revisión de dependencias
