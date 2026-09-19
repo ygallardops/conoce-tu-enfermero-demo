@@ -80,13 +80,11 @@ app/.playwright/
 tmp/
 temp/
 
-# Herramientas de asistencia locales de cada equipo
-# Configuran el entorno de trabajo de quien desarrolla, no el proyecto.
-# .claude/settings.json declara hooks con rutas absolutas de una maquina
+# Configuracion local de las herramientas de asistencia de cada equipo
+# .claude/settings.local.json guarda hooks con rutas absolutas de una maquina
 # concreta: versionarlo romperia esos hooks en cualquier otro equipo.
+# CLAUDE.md y .claude/settings.json si se versionan: son reglas del proyecto.
 # graphify-out/ es salida derivada y se regenera.
-CLAUDE.md
-.claude/settings.json
 .claude/settings.local.json
 graphify-out/
 
