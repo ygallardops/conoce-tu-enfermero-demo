@@ -88,7 +88,7 @@ flowchart TD
 | Control | Ejecución | Comportamiento |
 | --- | --- | --- |
 | Datos, lint, pruebas y build | Push y pull request hacia `main` | Bloqueante |
-| `pnpm audit` | Push y pull request | Revisa el lockfile completo y bloquea vulnerabilidades altas/críticas conocidas |
+| `pnpm audit` | Push y pull request | Revisa el lockfile completo y bloquea vulnerabilidades conocidas de severidad moderada o superior |
 | Dependency Review | Pull request | Bloquea dependencias nuevas de severidad alta o crítica |
 | CodeQL `security-extended` | Push y pull request | Ejecuta SAST; los hallazgos nuevos se revisan antes de integrar |
 | Dependabot | Semanal | Propone actualizaciones de npm y GitHub Actions |

@@ -33,7 +33,8 @@ Remediaciones:
 Evidencia exigida antes de integrar:
 
 - generación y equivalencia de datos sintéticos;
-- `pnpm audit --audit-level low` sin avisos conocidos;
+- `pnpm audit --audit-level moderate` sin avisos conocidos de severidad
+  moderada o superior;
 - lint, build y pruebas automatizadas;
 - Dependency Review y CodeQL aprobados;
 - smoke HTTP y nuevo baseline DAST posteriores al despliegue.
