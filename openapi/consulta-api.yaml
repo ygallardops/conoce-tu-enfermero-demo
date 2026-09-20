@@ -35,6 +35,21 @@ paths:
           description: Content-Type distinto de application/json
         '503':
           description: Proyección pública o verificación anti-bot temporalmente no disponible
+    get:
+      operationId: consultaMetodoNoPermitido
+      summary: La consulta solo admite POST
+      description: >-
+        No existe consulta por GET: un número CEP o un nombre no deben viajar
+        en la URL, el historial ni la analítica.
+      security: []
+      responses:
+        '405':
+          description: Método no permitido; la respuesta incluye la cabecera Allow
+          headers:
+            Allow:
+              schema:
+                type: string
+                const: POST
 components:
   schemas:
     ConsultaRequest:
@@ -65,7 +80,11 @@ components:
           type: string
           minLength: 3
           maxLength: 160
-          description: Nombre completo exacto; no admite comodines.
+          description: >-
+            Nombre completo exacto; no admite comodines. El servidor normaliza
+            antes de medir —recorta, colapsa espacios repetidos y retira
+            tildes— y aplica los limites a ese valor normalizado, no al
+            recibido.
         turnstile_token:
           $ref: '#/components/schemas/TurnstileToken'
     TurnstileToken:
