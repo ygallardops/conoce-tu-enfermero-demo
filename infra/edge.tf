@@ -16,14 +16,23 @@ resource "cloudflare_ruleset" "rate_limit" {
   kind    = "zone"
   phase   = "http_ratelimit"
 
-  # La expresion acota por hostname ademas de por ruta. Sin http.host la regla
-  # alcanzaria esa misma ruta en cualquier otro hostname de la zona, que es
-  # compartida con el sitio personal.
+  # La expresion es solo de ruta, y no por descuido: en plan Free el editor de
+  # rate limiting no ofrece Hostname como campo, comprobado el 2026-09-20. Se
+  # intento acotar con http.host y la limitacion es del plan, no del codigo.
+  #
+  # Consecuencia aceptada: la regla alcanza esa misma ruta en cualquier
+  # hostname de la zona, que es compartida con el sitio personal. Es inocuo
+  # —ahi no existe /api/v1/consulta— y el precio de no poder acotarla.
+  #
+  # Ademas, el token de Terraform tiene Zone WAF en lectura, asi que detecta
+  # deriva sobre esta regla pero no puede aplicarle cambios. Modificarla exige
+  # el panel, o ampliar el token. Mientras el plan siga siendo Free hay poco
+  # que cambiar aqui, asi que se deja como esta.
   rules = [{
     action      = "block"
     description = "Consulta pública API — 5 por 10 s por IP"
     enabled     = true
-    expression  = "(http.host eq \"${var.demo_hostname}\" and http.request.uri.path wildcard r\"/api/v1/consulta\")"
+    expression  = "(http.request.uri.path wildcard r\"/api/v1/consulta\")"
 
     ratelimit = {
       characteristics     = ["ip.src", "cf.colo.id"]
