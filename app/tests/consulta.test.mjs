@@ -4,6 +4,7 @@ import test from "node:test";
 import { normalizeSearchValue, validateConsultaPayload } from "../lib/consulta.mjs";
 import { readRequestJson } from "../lib/http-request.mjs";
 import { SITEVERIFY_URL, verifyTurnstile } from "../lib/turnstile.mjs";
+import { withDatabaseId } from "../scripts/deploy/wrangler-config.mjs";
 
 async function fetchWorker(path, init = {}, overrides = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -166,10 +167,33 @@ test("mantiene alineados los contratos del número CEP y el hosting", async () =
   assert.match(openapi, /'415':/);
   assert.equal(hosting.d1, "DB");
   assert.equal("r2" in hosting, false);
+  // Ningun identificador de cuenta en el repositorio publico.
+  assert.equal("project_id" in hosting, false);
+  assert.doesNotMatch(wranglerText, /database_id/);
   assert.doesNotMatch(wranglerText, /run_worker_first/);
   assert.doesNotMatch(viteText, /compatibility_flags/);
   assert.match(assetHeaders, /Strict-Transport-Security/);
   assert.match(assetHeaders, /Content-Security-Policy: default-src 'none'/);
+});
+
+test("el despliegue inyecta el identificador de D1 y falla si no puede", async () => {
+  const uuid = "00000000-0000-4000-8000-000000000000";
+  const configText = await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8");
+  const generated = JSON.parse(withDatabaseId(configText, uuid));
+
+  assert.equal(generated.d1_databases.length, 1);
+  assert.equal(generated.d1_databases[0].database_id, uuid);
+  assert.equal(generated.d1_databases[0].binding, "DB");
+  assert.equal(generated.name, "conoce-tu-enfermero-demo");
+
+  for (const invalido of [undefined, "", "no-es-un-uuid", `${uuid} `]) {
+    assert.throws(() => withDatabaseId(configText, invalido), /CLOUDFLARE_D1_DATABASE_ID/);
+  }
+  assert.throws(
+    () => withDatabaseId(JSON.stringify({ d1_databases: [{ binding: "DB", database_id: uuid }] }), uuid),
+    /no debe versionar database_id/,
+  );
+  assert.throws(() => withDatabaseId("{ // comentario\n}", uuid), /JSON plano/);
 });
 
 test("separa la consulta pública de la ingesta del padrón", async () => {

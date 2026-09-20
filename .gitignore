@@ -18,6 +18,11 @@ app/out/
 app/coverage/
 *.tsbuildinfo
 
+# Configuracion de despliegue generada.
+# wrangler.jsonc no versiona database_id: lo inyecta scripts/deploy/wrangler-config.mjs
+# desde CLOUDFLARE_D1_DATABASE_ID, en el fichero que se ignora aqui.
+app/wrangler.deploy.jsonc
+
 # Variables, secretos y credenciales
 .env
 .env.*
