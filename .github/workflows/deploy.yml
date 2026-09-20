@@ -54,6 +54,19 @@ jobs:
       - name: Instalar dependencias reproducibles
         run: pnpm install --frozen-lockfile
 
+      # wrangler.jsonc no versiona database_id: el repositorio es publico y un
+      # identificador de cuenta no tiene por que estar en el. El generador lo
+      # inyecta en wrangler.deploy.jsonc, que esta en .gitignore, y falla si la
+      # variable no existe o no es un UUID.
+      #
+      # Va antes del build a proposito: no depende de dist/ y asi una variable
+      # ausente se ve en segundos, no despues del build, las pruebas, el SBOM y
+      # la firma. El fichero no lo consume nadie hasta el ensayo en seco.
+      - name: Preparar la configuracion de despliegue
+        env:
+          CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
+        run: pnpm run deploy:config
+
       # `test` ejecuta el build ademas de las pruebas, asi que se despliega
       # exactamente el artefacto que acaba de pasarlas.
       - name: Construir y probar
@@ -78,15 +91,6 @@ jobs:
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: app/dist/**
-
-      # wrangler.jsonc no versiona database_id: el repositorio es publico y un
-      # identificador de cuenta no tiene por que estar en el. El generador lo
-      # inyecta en wrangler.deploy.jsonc, que esta en .gitignore, y falla si la
-      # variable no existe o no es un UUID.
-      - name: Preparar la configuracion de despliegue
-        env:
-          CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
-        run: pnpm run deploy:config
 
       # Ensayo previo: si la configuracion apuntara a un Worker o una base
       # distintos, aparece aqui y no despues de haber escrito en produccion.
