@@ -2,9 +2,10 @@
 # solo del subdominio de la demostracion. Cambiar cualquiera de estos afecta
 # tambien al sitio personal alojado en el mismo dominio.
 #
-# Se importan con su valor actual, no con el valor deseado: el objetivo de
-# esta iteracion es que el plan salga sin cambios. Las correcciones van en un
-# cambio aparte, para que queden como diff revisable.
+# Se importaron con su valor actual, no con el deseado, para que aquel plan
+# saliera sin cambios. Las correcciones van en cambios aparte, cada una como
+# diff revisable: always_use_https y min_tls_version el 2026-09-02, ssl el
+# 2026-09-20.
 
 # Sin esto, una primera peticion en HTTP plano se sirve tal cual. El Worker
 # envia HSTS, pero HSTS solo protege a partir de la segunda visita: la primera
@@ -24,8 +25,20 @@ resource "cloudflare_zone_setting" "min_tls_version" {
   value      = "1.2"
 }
 
+# full cifra el tramo Cloudflare-origen pero no valida el certificado, asi que
+# no distingue el origen legitimo de quien se interponga. strict lo valida.
+#
+# Para el hostname de la demostracion la diferencia es teorica: edge.tf apunta
+# a 192.0.2.1 (TEST-NET-1) y la ruta del Worker atiende todas las peticiones,
+# de modo que no existe tramo Cloudflare-origen. El ajuste es de zona y quien
+# gana es el otro hostname, el sitio personal, cuyo origen presenta
+# certificado valido —comprobado el 2026-09-20; era el dato que faltaba para
+# poder subirlo y por el que estuvo en full hasta hoy—.
+#
+# Si alguna vez ese certificado caduca o deja de coincidir con el nombre,
+# Cloudflare respondera 526 en ese sitio. La demostracion no se entera.
 resource "cloudflare_zone_setting" "ssl" {
   zone_id    = var.zone_id
   setting_id = "ssl"
-  value      = "full"
+  value      = "strict"
 }
