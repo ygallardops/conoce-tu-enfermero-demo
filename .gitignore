@@ -69,6 +69,10 @@ infra/.terraform.lock.hcl.bak
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
+# Un fichero de plan lleva dentro el estado completo que Terraform leyo, con
+# los mismos valores que excluye *.tfstate. No estaba excluido y aparecia como
+# no versionado tras un plan -out, a un git add . de acabar en el publico.
+*.tfplan
 crash.log
 crash.*.log
 
