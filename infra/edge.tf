@@ -4,17 +4,26 @@
 # cf.colo.id forma parte de la clave, asi que el limite efectivo global es
 # 5 peticiones por cada colo alcanzado, no 5 en total. Turnstile es la
 # proteccion principal; este limite acota el abuso desde una sola ruta.
+#
+# ATENCION: este recurso es el ruleset de entrada de la fase http_ratelimit
+# de toda la zona yersongallardo.com, no una regla suelta. El bloque rules es
+# su contenido completo: cualquier regla de limite creada desde el panel
+# desaparece en el siguiente apply, y lo unico que lo anuncia es una linea de
+# plan. Toda regla de limite de la zona se declara aqui o no existe.
 resource "cloudflare_ruleset" "rate_limit" {
   zone_id = var.zone_id
   name    = "default"
   kind    = "zone"
   phase   = "http_ratelimit"
 
+  # La expresion acota por hostname ademas de por ruta. Sin http.host la regla
+  # alcanzaria esa misma ruta en cualquier otro hostname de la zona, que es
+  # compartida con el sitio personal.
   rules = [{
     action      = "block"
     description = "Consulta pública API — 5 por 10 s por IP"
     enabled     = true
-    expression  = "(http.request.uri.path wildcard r\"/api/v1/consulta\")"
+    expression  = "(http.host eq \"${var.demo_hostname}\" and http.request.uri.path wildcard r\"/api/v1/consulta\")"
 
     ratelimit = {
       characteristics     = ["ip.src", "cf.colo.id"]
