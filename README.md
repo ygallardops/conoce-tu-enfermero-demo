@@ -47,12 +47,15 @@ La actualización prevista es unidireccional: origen privado → exportación m�
 - Consultas exactas, sin comodines, listados, paginación ni exportación; máximo cinco resultados.
 - SQL preparado, JSON de esquema cerrado y límites explícitos de cuerpo, campos y longitudes.
 - Rate limiting de Cloudflare Free en la API pública: 5 solicitudes por 10 segundos por IP y bloqueo temporal al exceder el umbral.
-- CSP con nonce, HSTS, `nosniff`, políticas de permisos y referencias, protección de iframe y respuestas HTML/JSON con `no-store`.
+- CSP con nonce, HSTS, `nosniff`, políticas de permisos y referencias, protección de iframe y respuestas HTML/JSON con `no-store`. El endpoint de optimización de imágenes conserva la suya propia, más estrecha, en lugar de recibir la general.
+- TLS 1.2 como mínimo, redirección a HTTPS en el borde y validación del certificado de origen (`ssl` en `strict`), los tres declarados en Terraform.
 - `x-request-id` para soporte sin registrar el término buscado ni el token de Turnstile.
-- Publicación del padrón desde `staging` con versión, checksum e invariantes D1, seguida de activación atómica.
+- Publicación del padrón desde `staging` con versión, checksum e invariantes D1, seguida de activación atómica. La ingesta comprueba que la base tenga esas invariantes antes de inspeccionar o escribir, y se detiene nombrando la que falte.
 - Observabilidad nativa de Workers sin logs de aplicación que contengan búsquedas o tokens.
 
 Las reglas WAF administradas no están habilitadas porque requieren un plan superior. R2 tampoco forma parte del despliegue actual. La línea base vigente no requirió crear recursos facturables.
+
+El plan gratuito acota además lo que la regla de rate limiting puede expresar: el recuento es por IP y por centro de datos, no global, y la expresión no admite `Hostname` como campo, de modo que la regla alcanza la ruta de consulta en cualquier hostname de la zona. Ambas cosas están anotadas en [`infra/edge.tf`](infra/edge.tf) como límites del plan, no como decisiones de diseño.
 
 ## Stack
 
@@ -67,20 +70,21 @@ Las reglas WAF administradas no están habilitadas porque requieren un plan supe
 ```mermaid
 flowchart TD
     PR["Pull request"] --> Q["Lint, pruebas y build"]
-    PR --> A["pnpm audit del lockfile"]
     PR --> S["CodeQL security-extended"]
     PR --> R["Dependency Review"]
-    Q --> M["main protegida<br/>los cuatro checks son bloqueantes"]
-    A --> M
+    Q --> A["pnpm audit del lockfile<br/>paso del mismo job"]
+    A --> M["main protegida<br/>tres checks requeridos"]
     S --> M
     R --> M
     M --> AP{"Aprobación manual<br/>environment production"}
-    AP --> B["Build y pruebas"]
+    AP --> CFG["Configuración de despliegue<br/>inyecta el id de D1"]
+    CFG --> B["Build y pruebas"]
     B --> SB["SBOM CycloneDX"]
     SB --> FP["Firma de procedencia"]
     FP --> DR["wrangler deploy --dry-run"]
     DR --> DP["Despliegue"]
     DP --> SM["Smoke HTTP<br/>contra el dominio real"]
+    SM --> UI["Pruebas de interfaz<br/>contra el despliegue"]
     W(["Programado semanal"]) --> ZAP["OWASP ZAP Baseline"]
     W --> AU["Auditoría del lockfile"]
 ```
@@ -98,11 +102,17 @@ flowchart TD
 
 La rama `main` está protegida. Los cambios se integran mediante pull request y se someten a controles de calidad y seguridad. Las Actions externas se fijan a commits inmutables y Dependabot conserva comentarios de versión para proponer su renovación.
 
+Los controles de seguridad se verifican por comportamiento y no por inspección del código. La validación de Turnstile en servidor, por ejemplo, se ejerce con un `fetch` inyectado que cubre token rechazado, hostname distinto, acción distinta, error HTTP, red caída y cada variable de entorno ausente: una comparación invertida hace fallar la prueba. Vale la pena decirlo porque la alternativa —comprobar que ciertos identificadores aparecen en el fichero— pasa igual de verde y no protege de nada.
+
+Con una excepción que conviene no disimular: **la consulta que termina bien no la prueba ninguna automatización**. Turnstile no se resuelve de forma programática, de modo que el smoke verifica el rechazo de un token inválido y las pruebas de interfaz verifican que sin resolver el desafío no salga ninguna petición, pero el camino completo se comprueba a mano en el navegador después de cada despliegue.
+
 El proyecto publica un [registro de mantenimiento de seguridad](SECURITY-MAINTENANCE.md) con fechas, alcance y evidencia de remediación, sin incluir payloads, secretos ni instrucciones de explotación.
 
 ## Infraestructura y despliegue
 
-La configuración del borde se declara como código en [`infra/`](infra/) con Terraform: la regla de rate limiting, el registro DNS de la demo, la ruta del Worker, el widget de Turnstile y los ajustes de zona. Un cambio hecho desde el panel de Cloudflare aparece como diferencia en el siguiente `terraform plan`, de modo que la configuración deja de ser un estado invisible.
+La configuración del borde se declara como código en [`infra/`](infra/) con Terraform: el registro DNS de la demo, la ruta del Worker, el widget de Turnstile, los ajustes de zona y la regla de rate limiting. Un cambio hecho desde el panel de Cloudflare aparece como diferencia en el siguiente `terraform plan`, de modo que la configuración deja de ser un estado invisible.
+
+La regla de rate limiting es un caso aparte y conviene decirlo con precisión: el token de Terraform la lee pero no puede escribirla, así que Terraform **detecta** su deriva y no la corrige. Modificarla exige el panel. El permiso no se amplía porque, con plan gratuito, apenas hay nada que cambiar en ella.
 
 Los recursos existentes se incorporaron mediante importación, sin recrearlos. El estado vive en un backend remoto con bloqueo y nunca en el repositorio: `terraform.tfstate` guarda en claro todo valor que Terraform lee.
 
@@ -111,6 +121,10 @@ El reparto de responsabilidades es estricto. Terraform no gestiona el Worker ni 
 Cada despliegue genera un SBOM en formato CycloneDX y firma la procedencia del bundle publicado, de modo que se puede verificar criptográficamente que salió de este repositorio, de un commit concreto y de este workflow. La verificación se hace con `gh attestation verify`.
 
 El despliegue se ejecuta desde GitHub Actions contra un environment protegido que exige aprobación manual. Cada ejecución construye, pasa las pruebas, ensaya el despliegue en seco, publica y verifica la demo con un smoke HTTP contra el dominio real, dejando registro del commit y de la versión desplegada. Las credenciales son un token de mínimo privilegio guardado en el environment, no en el repositorio.
+
+Ese token solo puede publicar código del Worker: no tiene permiso sobre D1. Por eso las migraciones de la base **no** las aplica el pipeline, sino el operador antes de integrar el cambio que las necesita. Dárselo convertiría una credencial que solo sustituye código en otra capaz de reescribir el padrón, y se prefiere la credencial mínima.
+
+`app/wrangler.jsonc` no versiona el identificador de la base D1: el repositorio es público y un identificador de cuenta no tiene por qué estar en él, el mismo criterio que se aplica a `account_id` y `zone_id`. El paso `deploy:config` lo inyecta desde `CLOUDFLARE_D1_DATABASE_ID` en un fichero ignorado por Git, y falla de forma explícita si la variable no existe o no es un UUID. El ensayo en seco y el despliegue usan esa misma configuración, de modo que el ensayo prueba exactamente lo que se publica.
 
 ## Ejecución local
 
@@ -146,7 +160,7 @@ pnpm run dev
 | `DEMO_BASE_URL` | Variable de Actions | Variable de GitHub Actions para cambiar el destino del DAST. |
 | `CLOUDFLARE_API_TOKEN` | Entorno local o environment | Secreto de privilegio mínimo usado únicamente por el CLI de ingesta remota. |
 | `CLOUDFLARE_ACCOUNT_ID` | Entorno local o environment | Cuenta destino para una ingesta explícitamente autorizada. |
-| `CLOUDFLARE_D1_DATABASE_ID` | Entorno local | Base D1 destino para una ingesta explícitamente autorizada. |
+| `CLOUDFLARE_D1_DATABASE_ID` | Entorno local y variable del environment `production` | Base D1 destino de la ingesta, y origen del identificador que `deploy:config` inyecta al desplegar. No es un secreto, pero tampoco se versiona: `wrangler.jsonc` no lo contiene. |
 | `PADRON_ALLOWED_PHOTO_HOSTS` | Entorno local | Hosts HTTPS aprobados para fotografías externas, separados por comas. Vacía por defecto: sin ella solo se admiten rutas propias del dominio. |
 
 El ejemplo local está en [`app/.env.example`](app/.env.example). No copie secretos reales a archivos versionados.
