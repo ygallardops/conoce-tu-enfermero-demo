@@ -9,36 +9,21 @@ const defaultSnapshotPath = resolve(scriptDir, "../../data/demo/canonical/padron
 const defaultChunkSize = 100;
 const maxRecordCountVariation = 0.1;
 
-export const schemaStatements = [
-  `CREATE TABLE IF NOT EXISTS padron_snapshots (
-    dataset_version TEXT PRIMARY KEY NOT NULL,
-    schema_version TEXT NOT NULL,
-    generated_at TEXT NOT NULL,
-    source TEXT NOT NULL,
-    record_count INTEGER NOT NULL,
-    checksum_sha256 TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'staging'
-      CHECK (status IN ('staging', 'active', 'retired')),
-    imported_at TEXT NOT NULL
-  )`,
-  `CREATE TABLE IF NOT EXISTS padron_publico (
-    dataset_version TEXT NOT NULL,
-    num_cep TEXT NOT NULL,
-    nombres_completos TEXT NOT NULL,
-    nombre_normalizado TEXT NOT NULL,
-    consejo_regional TEXT NOT NULL,
-    estado_habilidad TEXT NOT NULL
-      CHECK (estado_habilidad IN ('Habilitado', 'Inhabilitado')),
-    fecha_actualizacion TEXT NOT NULL,
-    foto_url TEXT,
-    PRIMARY KEY (dataset_version, num_cep),
-    FOREIGN KEY (dataset_version) REFERENCES padron_snapshots(dataset_version) ON DELETE CASCADE
-  )`,
-  "CREATE INDEX IF NOT EXISTS idx_padron_snapshots_status ON padron_snapshots(status)",
-  "CREATE UNIQUE INDEX IF NOT EXISTS idx_padron_single_active ON padron_snapshots(status) WHERE status = 'active'",
-  "CREATE INDEX IF NOT EXISTS idx_padron_cep_version ON padron_publico(num_cep, dataset_version)",
-  "CREATE INDEX IF NOT EXISTS idx_padron_nombre_version ON padron_publico(nombre_normalizado, dataset_version)",
+// Las migraciones de app/drizzle/ son la unica fuente de verdad del esquema.
+// La ingesta no lo declara: comprueba que las invariantes esten presentes y se
+// detiene si falta alguna, en lugar de emitir un CREATE TABLE IF NOT EXISTS que
+// sobre una base existente es un no-op silencioso.
+export const requiredSchemaObjects = [
+  "ck_padron_estado_habilidad_insert",
+  "ck_padron_estado_habilidad_update",
+  "ck_padron_snapshots_status_insert",
+  "ck_padron_snapshots_status_update",
+  "idx_padron_single_active",
 ];
+
+const schemaCheckSql = `SELECT name FROM sqlite_master WHERE name IN (${
+  requiredSchemaObjects.map(() => "?").join(", ")
+})`;
 
 const insertRecordSql = `INSERT INTO padron_publico (
   dataset_version, num_cep, nombres_completos, nombre_normalizado,
@@ -95,7 +80,7 @@ export function buildImportPlan(snapshot, options = {}) {
       batchCount: Math.ceil(snapshot.record_count / chunkSize),
       allowedPhotoHosts: validationOptions.allowedPhotoHosts ?? [],
     },
-    schema: schemaStatements.map((sql) => statement(sql)),
+    schemaCheck: statement(schemaCheckSql, [...requiredSchemaObjects]),
     inspect: [
       statement(
         `SELECT dataset_version, schema_version, generated_at, source, record_count,
@@ -270,10 +255,22 @@ function assertExistingMetadata(existing, snapshot) {
   }
 }
 
+export async function assertSchemaInvariants(plan, client) {
+  const [result] = await client.query([plan.schemaCheck]);
+  const present = new Set((result?.results ?? []).map((row) => row.name));
+  const missing = requiredSchemaObjects.filter((name) => !present.has(name));
+  if (missing.length) {
+    throw new Error(
+      `El esquema de D1 no tiene las invariantes requeridas: ${missing.join(", ")}. `
+      + "Aplica las migraciones pendientes con `wrangler d1 migrations apply` antes de importar.",
+    );
+  }
+}
+
 export async function applySnapshot(snapshot, client, options = {}) {
   const plan = buildImportPlan(snapshot, options);
   const importedAt = (options.now ?? new Date()).toISOString();
-  await client.query(plan.schema);
+  await assertSchemaInvariants(plan, client);
   const inspection = await client.query(plan.inspect);
   const existing = firstRow(inspection[0]);
   const active = firstRow(inspection[1]);

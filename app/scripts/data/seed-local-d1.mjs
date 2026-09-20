@@ -84,7 +84,6 @@ async function main() {
     ],
   };
   const statements = [
-    ...plan.schema,
     staging,
     plan.resetStaging,
     ...plan.recordBatches.flat(),
@@ -96,6 +95,17 @@ async function main() {
   const wranglerPath = resolve(appDir, "node_modules/wrangler/bin/wrangler.js");
   try {
     await writeFile(sqlPath, sql, { encoding: "utf8", flag: "wx" });
+    // El esquema local sale de las mismas migraciones que la base remota. Sin
+    // esto la inicializacion tendria que declararlo por su cuenta y habria dos
+    // definiciones que nadie compara.
+    await run(process.execPath, [
+      wranglerPath,
+      "d1",
+      "migrations",
+      "apply",
+      "DB",
+      "--local",
+    ]);
     await run(process.execPath, [
       wranglerPath,
       "d1",
