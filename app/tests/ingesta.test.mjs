@@ -11,6 +11,7 @@ import {
   formatVariation,
   parseCliArgs,
   readValidationOptions,
+  requiredSchemaObjects,
   runCli,
 } from "../scripts/data/import-d1.mjs";
 import {
@@ -41,6 +42,14 @@ function successfulResult(results = []) {
   return { success: true, results };
 }
 
+function isSchemaCheck(statements) {
+  return statements.length === 1 && statements[0].sql.includes("FROM sqlite_master");
+}
+
+function migratedSchemaResult(present = requiredSchemaObjects) {
+  return [successfulResult(present.map((name) => ({ name })))];
+}
+
 class SuccessfulD1Client {
   constructor(snapshot) {
     this.snapshot = snapshot;
@@ -50,6 +59,7 @@ class SuccessfulD1Client {
 
   async query(statements) {
     this.calls.push(structuredClone(statements));
+    if (isSchemaCheck(statements)) return migratedSchemaResult();
     if (statements.length === 2 && statements[0].sql.includes("FROM padron_snapshots WHERE dataset_version")) {
       return [successfulResult(), successfulResult()];
     }
@@ -82,6 +92,7 @@ class ExistingSnapshotClient {
 
   async query(statements) {
     this.calls.push(structuredClone(statements));
+    if (isSchemaCheck(statements)) return migratedSchemaResult();
     if (statements.length === 2 && statements[0].sql.includes("FROM padron_snapshots WHERE dataset_version")) {
       const existing = {
         dataset_version: this.snapshot.dataset_version,
@@ -183,8 +194,44 @@ test("genera lotes parametrizados sin concatenar el padrón al SQL", async () =>
   assert.ok(recordStatements.every((item) => !item.sql.includes("PERSONA SINTETICA")));
   assert.match(plan.activate[0].sql, /candidate\.record_count/);
   assert.match(plan.activate[0].sql, /active\.generated_at >= candidate\.generated_at/);
-  assert.ok(plan.schema.some((item) => item.sql.includes("idx_padron_single_active")));
-  assert.ok(plan.schema.some((item) => item.sql.includes("CHECK (estado_habilidad")));
+  assert.equal("schema" in plan, false, "la ingesta no declara esquema");
+  assert.deepEqual(plan.schemaCheck.params, requiredSchemaObjects);
+  assert.match(plan.schemaCheck.sql, /FROM sqlite_master WHERE name IN \(\?, \?, \?, \?, \?\)/);
+});
+
+test("la ingesta se detiene si al esquema le falta una invariante", async () => {
+  const snapshot = await demoSnapshot();
+
+  for (const ausente of requiredSchemaObjects) {
+    const presentes = requiredSchemaObjects.filter((name) => name !== ausente);
+    const client = new SuccessfulD1Client(snapshot);
+    client.query = async (statements) => {
+      client.calls.push(structuredClone(statements));
+      if (isSchemaCheck(statements)) return migratedSchemaResult(presentes);
+      return SuccessfulD1Client.prototype.query.call(client, statements);
+    };
+
+    await assert.rejects(
+      applySnapshot(snapshot, client),
+      (error) => error.message.includes(ausente) && error.message.includes("migrations apply"),
+      `falta ${ausente}`,
+    );
+    assert.equal(client.calls.length, 1, "no debe escribir nada tras detectar el esquema incompleto");
+  }
+});
+
+test("la ingesta comprueba el esquema antes de inspeccionar o escribir", async () => {
+  const snapshot = await demoSnapshot();
+  const client = new SuccessfulD1Client(snapshot);
+
+  await applySnapshot(snapshot, client);
+
+  assert.ok(isSchemaCheck(client.calls[0]), "la primera consulta es la comprobacion de esquema");
+  assert.equal(
+    client.calls.flat().some((item) => /^CREATE\b/i.test(item.sql.trim())),
+    false,
+    "la ingesta no emite DDL",
+  );
 });
 
 test("la migración D1 refuerza invariantes sin reconstruir tablas con datos", async () => {
@@ -266,7 +313,7 @@ test("trata el snapshot activo como idempotente y no vuelve a escribir", async (
 
   assert.equal(result.outcome, "already-active");
   assert.equal(client.calls.length, 2);
-  assert.ok(client.calls[0].every((item) => item.sql.startsWith("CREATE")));
+  assert.ok(isSchemaCheck(client.calls[0]));
 });
 
 test("rechaza reactivar una versión retirada o sustituir una versión más reciente", async () => {
