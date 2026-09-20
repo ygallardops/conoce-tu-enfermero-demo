@@ -5,6 +5,61 @@ payloads, secretos, rutas de evasión ni instrucciones de explotación. Los
 detalles que puedan facilitar abuso se gestionan mediante el canal privado
 definido en [`SECURITY.md`](SECURITY.md).
 
+## Auditoría del 19 y 20 de septiembre de 2026
+
+Auditoría de seguridad aplicando una metodología pública externa,
+[`cloudflare/security-audit-skill`](https://github.com/cloudflare/security-audit-skill),
+sobre la totalidad del código versionado. Lectura de fuente únicamente: no se
+ejercitó el despliegue ni se probó contra el dominio público, conforme a las
+reglas de investigación segura de [`SECURITY.md`](SECURITY.md).
+
+Alcance revisado:
+
+- Worker, cabeceras de seguridad y API pública;
+- validación de entrada, verificación anti-bots y proyección D1;
+- CLI de ingesta y validación de snapshots canónicos;
+- configuración del borde declarada en `infra/`;
+- workflows, cadena de suministro y contratos publicados;
+- exclusiones del repositorio público.
+
+**Resultado: ninguna vulnerabilidad explotable.** Los hallazgos fueron de
+aseguramiento de controles, de endurecimiento y de coherencia entre lo
+documentado y lo implementado.
+
+Endurecimientos integrados, en diez pull requests:
+
+- la verificación anti-bots en servidor pasa a comprobarse por comportamiento
+  —con `fetch` inyectado y casos de éxito, rechazo, anfitrión y acción
+  divergentes, error de transporte y configuración ausente— en lugar de por
+  inspección del código;
+- una sola fuente de verdad para el esquema D1: la ingesta deja de declararlo y
+  se detiene si a la base le falta alguna invariante, en vez de emitir un DDL
+  que sobre una base existente no tenía efecto;
+- el endpoint de optimización de imágenes conserva su política de contenidos
+  propia, más estrecha que la general;
+- validación del certificado de origen en el borde, sumada al mínimo de TLS y a
+  la redirección a HTTPS ya vigentes;
+- identificadores de cuenta fuera del repositorio público, inyectados en el
+  despliegue desde una variable del entorno protegido;
+- ficheros de plan de Terraform excluidos del control de versiones;
+- contrato público alineado con la implementación en el método no permitido y
+  en la medición de longitudes.
+
+Límites aceptados y registrados como tales, no como pendientes:
+
+- el pipeline no aplica migraciones de la base, porque su credencial no tiene
+  permiso sobre ella y ampliarlo convertiría un token que solo publica código
+  en otro capaz de reescribir el padrón;
+- la regla de límite de peticiones no admite acotarse por anfitrión en el plan
+  gratuito.
+
+Evidencia exigida antes de integrar, además de la ya vigente:
+
+- verificación por mutación de los controles con prueba nueva: deshacer la
+  corrección hace fallar la prueba correspondiente y solo esa;
+- comprobación posterior al despliegue del estado real del esquema y de la
+  configuración del borde.
+
 ## Revisión del 16 de agosto de 2026
 
 Alcance revisado:
