@@ -60,6 +60,32 @@ test("solo habilita iframe para origenes HTTPS explicitamente aprobados", async 
   assert.equal(response.headers.get("x-frame-options"), null);
 });
 
+test("el endpoint de imágenes conserva su CSP de aislamiento", async () => {
+  const response = await fetchWorker("/_vinext/image?url=/og.png&w=640&q=75", {}, {
+    ASSETS: { fetch: async () => new Response("png", { headers: { "content-type": "image/png" } }) },
+    IMAGES: {
+      input: () => ({
+        transform: () => ({
+          output: async () => ({
+            response: () => new Response("webp", { headers: { "content-type": "image/webp" } }),
+          }),
+        }),
+      }),
+    },
+  });
+  const csp = response.headers.get("content-security-policy") ?? "";
+
+  assert.equal(response.status, 200);
+  // La CSP estrecha de la libreria, no la general de la aplicacion.
+  assert.match(csp, /script-src 'none'/);
+  assert.match(csp, /sandbox/);
+  assert.doesNotMatch(csp, /default-src 'self'|nonce-/);
+  // El resto de cabeceras de seguridad si se aplican.
+  assert.match(response.headers.get("strict-transport-security") ?? "", /max-age=31536000/);
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+});
+
 test("renderiza la consulta pública y elimina el starter", async () => {
   const response = await render();
   const html = await response.text();

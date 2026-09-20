@@ -118,7 +118,13 @@ const worker = {
           return result.response();
         },
       }, allowedWidths);
-      return withSecurityHeaders(response, env, csp);
+      // El endpoint de imagenes trae su propia CSP, mucho mas estrecha que la
+      // de la aplicacion: script-src 'none'; frame-src 'none'; sandbox. Existe
+      // para neutralizar contenido activo servido por esa ruta, asi que se
+      // conserva en lugar de sobrescribirla con la CSP general. El resto de
+      // cabeceras de seguridad si se aplican.
+      const imageCsp = response.headers.get("content-security-policy") ?? csp;
+      return withSecurityHeaders(response, env, imageCsp);
     }
 
     return withSecurityHeaders(await handler.fetch(requestWithCsp(request, csp), env, ctx), env, csp);
