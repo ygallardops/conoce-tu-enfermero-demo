@@ -12,7 +12,6 @@
     {
       "binding": "DB",
       "database_name": "conoce-tu-enfermero-demo",
-      "database_id": "65e02e90-3bd9-4873-a146-b0ae9b0c048a",
       "migrations_dir": "./drizzle"
     }
   ],

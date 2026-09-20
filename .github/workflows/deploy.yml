@@ -79,19 +79,30 @@ jobs:
         with:
           subject-path: app/dist/**
 
+      # wrangler.jsonc no versiona database_id: el repositorio es publico y un
+      # identificador de cuenta no tiene por que estar en el. El generador lo
+      # inyecta en wrangler.deploy.jsonc, que esta en .gitignore, y falla si la
+      # variable no existe o no es un UUID.
+      - name: Preparar la configuracion de despliegue
+        env:
+          CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
+        run: pnpm run deploy:config
+
       # Ensayo previo: si la configuracion apuntara a un Worker o una base
       # distintos, aparece aqui y no despues de haber escrito en produccion.
+      # Ensayo y despliegue usan la misma configuracion, o el ensayo no probaria
+      # lo que se publica.
       - name: Ensayar el despliegue
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: pnpm exec wrangler deploy --dry-run
+        run: pnpm exec wrangler deploy --dry-run --config wrangler.deploy.jsonc
 
       - name: Desplegar
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: pnpm exec wrangler deploy
+        run: pnpm exec wrangler deploy --config wrangler.deploy.jsonc
 
       - name: Verificar la demo desplegada
         env:
@@ -123,6 +134,8 @@ jobs:
             echo "- Resultado: ${{ job.status }}"
             echo ""
             echo '```'
-            pnpm exec wrangler deployments list 2>&1 | head -20 || true
+            config=wrangler.jsonc
+            if [ -f wrangler.deploy.jsonc ]; then config=wrangler.deploy.jsonc; fi
+            pnpm exec wrangler deployments list --config "$config" 2>&1 | head -20 || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

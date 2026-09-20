@@ -4,6 +4,11 @@
 # No son secretos —son identificadores que se leen del panel— pero se
 # mantienen fuera del repositorio publico para no facilitar el reconocimiento
 # de la cuenta. El token NO va aqui: se lee de CLOUDFLARE_API_TOKEN.
+#
+# La regla vale para todo identificador de cuenta, no solo para estos dos.
+# El de la base D1 sigue el mismo criterio: wrangler.jsonc no lo versiona y
+# app/scripts/deploy/wrangler-config.mjs lo inyecta al desplegar desde
+# CLOUDFLARE_D1_DATABASE_ID.
 
 account_id = ""
 zone_id    = ""
