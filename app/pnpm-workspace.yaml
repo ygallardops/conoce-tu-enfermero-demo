@@ -8,11 +8,6 @@ allowBuilds:
 # corregida; db:generate forma parte de la validación para detectar incompatibilidad.
 overrides:
   '@esbuild-kit/core-utils>esbuild': 0.25.12
-  # ajv arrastra fast-uri <3.1.6 a través de la cadena webpack de
-  # react-server-dom-webpack (GHSA-jqff-g426-hqxp y tres avisos relacionados de
-  # confusión de host). Se fuerza la primera versión corregida; la arista es
-  # transitiva y solo interviene en el build.
-  fast-uri: 3.1.6
   # miniflare fija sharp en 0.35.2 exacto, por lo que Dependabot no alcanza la
   # versión corregida de GHSA-rgj7-g3m4-5g8c (libheif) y cierra el aviso como
   # "security_update_not_possible". Se fuerza la arista; sharp solo interviene
@@ -22,3 +17,14 @@ overrides:
   # consumo de CPU con merge keys vacías), con el mismo bloqueo de rango. La
   # arista solo se usa al cargar la configuración de lint.
   '@eslint/eslintrc>js-yaml': 4.3.2
+  # ajv arrastra fast-uri por la cadena webpack de react-server-dom-webpack.
+  # Estuvo fijado exacto en 3.1.6 y eso impidio que Dependabot corrigiera
+  # GHSA-58mr-gqgx-xq4g. Rango con suelo en la primera version sin ese aviso,
+  # GHSA-qw65-cvwx-89v3 ni GHSA-hrr3-gc8f-f4qj. Solo interviene en el build.
+  fast-uri: ^3.1.8
+  # miniflare fija tambien undici exacto (7.29.0), con el mismo efecto que en
+  # sharp: GHSA-w293-vg96-wgc3, GHSA-rfgv-xxqx-mfg5 y los avisos menores del
+  # 2026-09-30 quedan fuera del alcance de Dependabot. Se fuerza un rango y no
+  # una version exacta, para que el siguiente parche entre sin tocar esta
+  # linea. undici solo interviene en el desarrollo local y en el build.
+  'miniflare>undici': ^7.29.1
