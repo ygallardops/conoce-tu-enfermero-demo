@@ -1,10 +1,22 @@
 import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
+import { register } from "node:module";
 import test from "node:test";
 import { normalizeSearchValue, validateConsultaPayload } from "../lib/consulta.mjs";
 import { readRequestJson } from "../lib/http-request.mjs";
 import { SITEVERIFY_URL, verifyTurnstile } from "../lib/turnstile.mjs";
 import { withDatabaseId } from "../scripts/deploy/wrangler-config.mjs";
+
+// El Worker compilado importa "cloudflare:workers" en el nivel superior (vinext
+// lo usa para el tracing) y Node no resuelve ese esquema. Se sustituye por un
+// modulo sin tracing ni bindings: las pruebas pasan los bindings por argumento.
+const workersStub = "data:text/javascript,export const env = {};";
+register(`data:text/javascript,${encodeURIComponent(`
+  export async function resolve(specifier, context, next) {
+    if (specifier === "cloudflare:workers") return { url: ${JSON.stringify(workersStub)}, shortCircuit: true };
+    return next(specifier, context);
+  }
+`)}`);
 
 async function fetchWorker(path, init = {}, overrides = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
