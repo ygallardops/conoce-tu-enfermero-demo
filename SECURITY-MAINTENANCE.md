@@ -5,6 +5,29 @@ payloads, secretos, rutas de evasión ni instrucciones de explotación. Los
 detalles que puedan facilitar abuso se gestionan mediante el canal privado
 definido en [`SECURITY.md`](SECURITY.md).
 
+## Actualización de dependencias del 30 de septiembre de 2026
+
+Avisos publicados sobre cuatro dependencias transitivas, cerrados el mismo día:
+`fast-uri` (GHSA-58mr-gqgx-xq4g, GHSA-qw65-cvwx-89v3, GHSA-hrr3-gc8f-f4qj),
+`undici` (GHSA-w293-vg96-wgc3 y cinco de severidad menor),
+`brace-expansion` (GHSA-q2hr-2g5m-vwhr) y `fflate` (GHSA-px8p-9vwx-vf98). Todas
+intervienen solo en el build o en el desarrollo local; ninguna forma parte del
+Worker desplegado.
+
+Tres de los cuatro paquetes no podían corregirse por la vía automática, porque
+algo fijaba la versión exacta: un override propio del proyecto en un caso, y
+el paquete intermedio que los incluye en los otros dos. Los overrides nuevos
+fijan un mínimo, no una versión exacta, para que el siguiente parche no vuelva
+a quedar bloqueado.
+
+En la misma tanda se actualizaron vinext, Wrangler, el plugin de Cloudflare
+para Vite, Vite, Drizzle y CodeQL. La subida de vinext exigió ajustar cómo las
+pruebas cargan el Worker compilado; la aplicación no cambió.
+
+Evidencia: `pnpm audit --audit-level moderate` sin avisos, cero alertas
+abiertas, lint, pruebas, Dependency Review y CodeQL aprobados, y despliegue
+posterior con smoke HTTP y pruebas de interfaz en verde.
+
 ## Auditoría del 19 y 20 de septiembre de 2026
 
 Auditoría de seguridad aplicando una metodología pública externa,
