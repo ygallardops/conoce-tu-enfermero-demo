@@ -28,3 +28,8 @@ overrides:
   # una version exacta, para que el siguiente parche entre sin tocar esta
   # linea. undici solo interviene en el desarrollo local y en el build.
   'miniflare>undici': ^7.29.1
+  # satori (via vinext > @vercel/og) fija fflate exacto en 0.7.3 desde vinext
+  # 1.0.0-beta.12, vulnerable a GHSA-px8p-9vwx-vf98 (bucle infinito con ZIP64
+  # malformado). Rango con suelo en la version corregida, por la misma razon
+  # que undici. Solo interviene en el build.
+  fflate: ^0.7.5
