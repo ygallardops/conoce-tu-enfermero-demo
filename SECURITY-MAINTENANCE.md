@@ -5,6 +5,20 @@ payloads, secretos, rutas de evasión ni instrucciones de explotación. Los
 detalles que puedan facilitar abuso se gestionan mediante el canal privado
 definido en [`SECURITY.md`](SECURITY.md).
 
+## Actualización de dependencias del 9 de octubre de 2026
+
+Tres avisos altos sobre dependencias transitivas de build y desarrollo local,
+ninguna presente en el Worker desplegado:
+
+- `sharp` (GHSA-wq5f-xc86-pv6w) y `source-map-js` (GHSA-68fv-2mgg-jv7q),
+  corregidos;
+- `braces` (GHSA-vfj7-8cjw-p6xm), **sin versión corregida publicada**. Se
+  excluye solo ese aviso de la auditoría de dependencias, como excepción
+  temporal con fecha, motivo y condición de retirada escritos junto a ella:
+  el paquete interviene únicamente en lint y build, con patrones de la propia
+  configuración del proyecto, nunca con datos de quien consulta. El umbral de
+  la auditoría no cambia, y la excepción se retira en cuanto exista corrección.
+
 ## Actualización de dependencias del 30 de septiembre de 2026
 
 Avisos publicados sobre cuatro dependencias transitivas, cerrados el mismo día:
