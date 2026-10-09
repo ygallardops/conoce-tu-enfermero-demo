@@ -8,11 +8,12 @@ allowBuilds:
 # corregida; db:generate forma parte de la validación para detectar incompatibilidad.
 overrides:
   '@esbuild-kit/core-utils>esbuild': 0.25.12
-  # miniflare fija sharp en 0.35.2 exacto, por lo que Dependabot no alcanza la
-  # versión corregida de GHSA-rgj7-g3m4-5g8c (libheif) y cierra el aviso como
-  # "security_update_not_possible". Se fuerza la arista; sharp solo interviene
-  # en el desarrollo local con miniflare, no viaja en el Worker desplegado.
-  'miniflare>sharp': 0.35.4
+  # miniflare fija sharp exacto (hoy 0.35.4), por lo que Dependabot no alcanza
+  # las versiones corregidas: GHSA-rgj7-g3m4-5g8c (libheif) y despues
+  # GHSA-wq5f-xc86-pv6w (librsvg). Se fuerza la arista con rango y no exacta,
+  # porque la version exacta bloqueo la segunda correccion. sharp solo
+  # interviene en el desarrollo local con miniflare, no viaja en el Worker.
+  'miniflare>sharp': ^0.35.5
   # eslint arrastra js-yaml <4.3.2 vía @eslint/eslintrc (GHSA-2883-xcg3-v3hh,
   # consumo de CPU con merge keys vacías), con el mismo bloqueo de rango. La
   # arista solo se usa al cargar la configuración de lint.
@@ -33,3 +34,16 @@ overrides:
   # malformado). Rango con suelo en la version corregida, por la misma razon
   # que undici. Solo interviene en el build.
   fflate: ^0.7.5
+
+# Excepcion temporal, abierta el 2026-10-09. GHSA-vfj7-8cjw-p6xm (braces,
+# desbordamiento de pila con patrones muy anidados) no tiene version corregida
+# publicada: afecta hasta 3.0.3, que es la ultima. braces solo interviene en
+# lint y build, con patrones de los ficheros de configuracion del proyecto y
+# nunca con entrada de quien consulta. Sin la excepcion, pnpm audit bloquea
+# todas las pull requests, incluidas las que corrigen otros avisos.
+# Retirar en cuanto exista braces 3.0.4. Dependabot no tiene alerta de este
+# aviso, asi que el recordatorio es el repaso semanal de la seccion 9 del
+# runbook: "pnpm view braces version".
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vfj7-8cjw-p6xm
