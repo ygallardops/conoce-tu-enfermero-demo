@@ -1,8 +1,8 @@
 # Infraestructura del borde
 
 Configuración de Cloudflare como código. Cubre lo que hasta ahora vivía
-únicamente en el panel y no era ni reproducible ni auditable: reglas de rate
-limiting y WAF, DNS, ajustes de zona, el widget de Turnstile y la ruta del
+únicamente en el panel y no era ni reproducible ni auditable: la regla de rate
+limiting, DNS, ajustes de zona, el widget de Turnstile y la ruta del
 Worker.
 
 ## Qué gestiona cada herramienta
@@ -10,9 +10,9 @@ Worker.
 El reparto es estricto a propósito. Dos herramientas compitiendo por el mismo
 recurso terminan borrándose la configuración entre despliegues.
 
-| Recurso                        | Dueno      |
+| Recurso                        | Dueño      |
 | ------------------------------ | ---------- |
-| Rate limiting, WAF             | Terraform  |
+| Regla de rate limiting         | Terraform, solo la observa |
 | DNS, ajustes de zona, TLS      | Terraform  |
 | Widget de Turnstile            | Terraform  |
 | Ruta y dominio del Worker      | Terraform  |
@@ -38,17 +38,22 @@ permiso.
 
 El token se lee de `CLOUDFLARE_API_TOKEN` en el entorno. No se declara como
 variable de Terraform para que no pueda acabar en un `.tfvars` por descuido, y
-no se escribe en ningun fichero del repositorio.
+no se escribe en ningún fichero del repositorio.
 
 Se usan dos tokens distintos con permisos mínimos: uno de solo lectura para
 inspeccionar y planificar, y uno de escritura acotado a esta zona y esta cuenta
 para aplicar.
 
+Ninguno puede escribir la regla de rate limiting: el permiso `Zone WAF` va en
+lectura, así que Terraform detecta su deriva pero no la corrige. Modificarla
+exige el panel. El motivo está anotado en [`edge.tf`](edge.tf).
+
 ## Recursos existentes
 
-La configuración actual del panel se incorpora con bloques `import`, no
-recreando recursos. Recrear una regla de rate limiting abre una ventana sin
-protección, y recrear un registro DNS provoca corte de servicio.
+La configuración que ya existía en el panel se incorporó con bloques `import`,
+no recreando recursos. Recrear una regla de rate limiting abre una ventana sin
+protección, y recrear un registro DNS provoca corte de servicio. Los bloques ya
+no figuran en el código.
 
 ## Alcance dentro de la zona
 
@@ -63,10 +68,17 @@ dominio, no solo al subdominio de la demostración. Un cambio en
 
 ## Uso
 
+Antes de empezar hacen falta, en el entorno, `CLOUDFLARE_API_TOKEN`,
+`TF_CLOUD_ORGANIZATION` y `TF_WORKSPACE`; y `account_id` y `zone_id`, en un
+`terraform.tfvars` copiado de
+[`terraform.tfvars.example`](terraform.tfvars.example) o como variables del
+workspace.
+
     cd infra
     terraform init
     terraform plan
 
-Un `plan` limpio sobre la infraestructura existente —sin cambios pendientes— es
-la señal de que la importación refleja la realidad. Ese es el objetivo de la
-primera iteración: describir lo que ya hay, no cambiarlo.
+Un `plan` limpio —sin cambios pendientes— es la señal de que el código refleja
+la realidad. La primera iteración se limitó a describir lo que ya había; las
+correcciones posteriores (redirección a HTTPS, TLS mínimo y `ssl` en `strict`)
+entraron cada una como un cambio aparte.
