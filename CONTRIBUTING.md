@@ -31,4 +31,4 @@ probablemente sea un defecto de la documentación.
 
 El código se distribuye bajo licencia MIT y puede usarse libremente. La licencia
 no concede derechos sobre nombres, logotipos ni marcas de terceros, y una copia
-desplegada no debe presentarse como servicio oficial de ninguna institucion.
+desplegada no debe presentarse como servicio oficial de ninguna institución.

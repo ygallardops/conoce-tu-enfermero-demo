@@ -17,7 +17,7 @@ Prototipo para sustituir el validador `/validar/` del Colegio de Enfermeros del 
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Terraform](https://img.shields.io/badge/Terraform-844FBA?style=flat-square&logo=terraform&logoColor=white)](https://www.terraform.io/)
 
-[**Abrir la demo**](https://enfermeros-demo.yersongallardo.com/) · [Contrato OpenAPI](openapi/consulta-api.yaml) · [Política de seguridad](SECURITY.md) · [Mantenimiento de seguridad](SECURITY-MAINTENANCE.md)
+[**Abrir la demo**](https://enfermeros-demo.yersongallardo.com/) | [Contrato OpenAPI](openapi/consulta-api.yaml) | [Política de seguridad](SECURITY.md) | [Mantenimiento de seguridad](SECURITY-MAINTENANCE.md)
 
 <br>
 
@@ -73,7 +73,7 @@ flowchart LR
     S --> D
 ```
 
-La actualización prevista es unidireccional: origen privado → exportación mínima → validación → staging → activación atómica. Si la carga falla, el snapshot público anterior permanece activo. El origen real y sus credenciales quedan fuera de la aplicación pública.
+La actualización prevista es unidireccional: del origen privado sale una exportación mínima, que se valida, se carga en staging y se activa de forma atómica. Si la carga falla, el snapshot público anterior permanece activo. El origen real y sus credenciales quedan fuera de la aplicación pública.
 
 ## Inicio rápido
 
@@ -100,6 +100,9 @@ pnpm run dev
 | `data:import:check` | Valida el plan de ingesta sin red ni credenciales. |
 | `data:local:init` | Carga exclusivamente el snapshot sintético en D1 local. |
 | `test` | Compila la aplicación y ejecuta las pruebas automatizadas. |
+
+> [!NOTE]
+> En local se ven la interfaz y los rechazos, no los resultados. Turnstile falla de forma cerrada: sin `TURNSTILE_SECRET_KEY` la API responde 503, y con las claves de prueba de Cloudflare responde 403, porque Siteverify no acredita entonces el hostname ni la acción que el Worker exige. Una consulta con resultados se comprueba en la [demo publicada](https://enfermeros-demo.yersongallardo.com/).
 
 ## Seguridad implementada
 
@@ -238,11 +241,11 @@ Dos controles adicionales protegen el padrón publicado. Un snapshot sin registr
 
 ## Estado y próximos pasos
 
-- [x] **Implementado:** contratos ejecutables, esquema D1, datos sintéticos y adaptadores equivalentes.
-- [x] **Desplegado:** consulta accesible, D1, Turnstile y metadatos para vistas previas sociales.
-- [x] **Operativo:** cabeceras defensivas, publicación atómica, rate limiting, observabilidad, DAST bloqueante y protección de `main`.
-- [x] **Plataforma:** configuración del borde declarada en Terraform, despliegue continuo con aprobación manual, SBOM y firma de procedencia en cada publicación.
-- [ ] **Próximo paso institucional:** adaptar el origen real, validar el catálogo oficial y preparar la sustitución controlada de `/validar/` cuando el CEP proporcione la información y autorizaciones necesarias.
+- **Implementado:** contratos ejecutables, esquema D1, datos sintéticos y adaptadores equivalentes.
+- **Desplegado:** consulta accesible, D1, Turnstile y metadatos para vistas previas sociales.
+- **Operativo:** cabeceras defensivas, publicación atómica, rate limiting, observabilidad, DAST bloqueante y protección de `main`.
+- **Plataforma:** configuración del borde declarada en Terraform, despliegue continuo con aprobación manual, SBOM y firma de procedencia en cada publicación.
+- **Pendiente, próximo paso institucional:** adaptar el origen real, validar el catálogo oficial y preparar la sustitución controlada de `/validar/` cuando el CEP proporcione la información y autorizaciones necesarias.
 
 ## Alcance y uso de marca
 
