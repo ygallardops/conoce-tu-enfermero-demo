@@ -5,6 +5,28 @@ payloads, secretos, rutas de evasión ni instrucciones de explotación. Los
 detalles que puedan facilitar abuso se gestionan mediante el canal privado
 definido en [`SECURITY.md`](SECURITY.md).
 
+## Actualización de dependencias del 25 de octubre de 2026
+
+Seis avisos sobre tres dependencias transitivas de build, lint y desarrollo
+local, ninguna presente en el Worker desplegado, cerrados el mismo día en que
+la auditoría del lockfile en `main` los detectó:
+
+- `undici` (GHSA-xjj6-f33q-929c, alto; GHSA-4qv8-2p9j-2685 y
+  GHSA-f72v-6w45-q472, moderados);
+- `fast-uri` (GHSA-w74x-v6f9-j3xg y GHSA-wjr9-j795-jxcr, moderados, y dos
+  avisos bajos);
+- `zod` (GHSA-mrhx-c7xc-m3w5, alto).
+
+Cinco se publicaron después de que los checks de la última actualización de
+Dependabot hubieran pasado, y Dependabot no pudo proponer la corrección. En los
+tres casos el rango permitido ya admitía la versión corregida y lo que faltaba
+era refrescar el lockfile. Los overrides de `undici` y `fast-uri` suben su
+mínimo a la versión corregida para que no vuelva atrás.
+
+Evidencia: `pnpm audit --audit-level moderate` sin avisos, cero alertas
+abiertas, lint, pruebas, Dependency Review y CodeQL aprobados, y despliegue
+posterior con smoke HTTP y pruebas de interfaz en verde.
+
 ## Actualización de dependencias del 9 de octubre de 2026
 
 Tres avisos altos sobre dependencias transitivas de build y desarrollo local,
