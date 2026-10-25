@@ -22,13 +22,18 @@ overrides:
   # Estuvo fijado exacto en 3.1.6 y eso impidio que Dependabot corrigiera
   # GHSA-58mr-gqgx-xq4g. Rango con suelo en la primera version sin ese aviso,
   # GHSA-qw65-cvwx-89v3 ni GHSA-hrr3-gc8f-f4qj. Solo interviene en el build.
-  fast-uri: ^3.1.8
+  # El 2026-10-25 el suelo sube a 3.1.9 por GHSA-w74x-v6f9-j3xg y
+  # GHSA-wjr9-j795-jxcr: el rango ya la admitia, pero el lockfile seguia en 3.1.8.
+  fast-uri: ^3.1.9
   # miniflare fija tambien undici exacto (7.29.0), con el mismo efecto que en
   # sharp: GHSA-w293-vg96-wgc3, GHSA-rfgv-xxqx-mfg5 y los avisos menores del
   # 2026-09-30 quedan fuera del alcance de Dependabot. Se fuerza un rango y no
   # una version exacta, para que el siguiente parche entre sin tocar esta
   # linea. undici solo interviene en el desarrollo local y en el build.
-  'miniflare>undici': ^7.29.1
+  # El 2026-10-25 el suelo sube a 7.30.1 por GHSA-xjj6-f33q-929c,
+  # GHSA-4qv8-2p9j-2685 y GHSA-f72v-6w45-q472: miniflare la fija en 7.30.0 y el
+  # rango anterior admitia la correccion, pero el lockfile no se movia.
+  'miniflare>undici': ^7.30.1
   # satori (via vinext > @vercel/og) fija fflate exacto en 0.7.3 desde vinext
   # 1.0.0-beta.12, vulnerable a GHSA-px8p-9vwx-vf98 (bucle infinito con ZIP64
   # malformado). Rango con suelo en la version corregida, por la misma razon
