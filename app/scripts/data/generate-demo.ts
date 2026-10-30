@@ -2,6 +2,16 @@ import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { CanonicalRecord } from "./snapshot-validation.ts";
+
+type SourceRecord = {
+  num_cep: string;
+  nombres_completos: string;
+  consejo_regional: string;
+  estado_habilidad: string;
+  fecha_actualizacion: string;
+  foto_url?: string | null;
+};
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const appDir = resolve(scriptDir, "../..");
@@ -26,7 +36,7 @@ const councils = [
   "CONSEJO REGIONAL DEMO PIURA",
 ];
 
-function mulberry32(seed) {
+function mulberry32(seed: number): () => number {
   return function random() {
     let value = (seed += 0x6d2b79f5);
     value = Math.imul(value ^ (value >>> 15), value | 1);
@@ -35,22 +45,22 @@ function mulberry32(seed) {
   };
 }
 
-function pick(items, random) {
+function pick<T>(items: readonly T[], random: () => number): T {
   return items[Math.floor(random() * items.length)];
 }
 
-function normalizeText(value) {
+function normalizeText(value: unknown): string {
   return String(value).trim().normalize("NFC").replace(/\s+/g, " ");
 }
 
-function normalizeStatus(value) {
+function normalizeStatus(value: unknown): CanonicalRecord["estado_habilidad"] {
   const normalized = normalizeText(value).toLowerCase();
   if (["habilitado", "habilitada", "h", "activo", "1"].includes(normalized)) return "Habilitado";
   if (["inhabilitado", "inhabilitada", "i", "inactivo", "0"].includes(normalized)) return "Inhabilitado";
   throw new Error(`Estado no reconocido: ${value}`);
 }
 
-function canonicalRecord(record) {
+function canonicalRecord(record: SourceRecord): CanonicalRecord {
   return {
     num_cep: normalizeText(record.num_cep).toUpperCase(),
     nombres_completos: normalizeText(record.nombres_completos).toUpperCase(),
@@ -61,15 +71,15 @@ function canonicalRecord(record) {
   };
 }
 
-function sortRecords(records) {
+function sortRecords(records: SourceRecord[]): CanonicalRecord[] {
   return records.map(canonicalRecord).sort((a, b) => a.num_cep.localeCompare(b.num_cep));
 }
 
-function recordsChecksum(records) {
+function recordsChecksum(records: SourceRecord[]): string {
   return createHash("sha256").update(JSON.stringify(sortRecords(records))).digest("hex");
 }
 
-function makeSnapshot(records, source) {
+function makeSnapshot(records: SourceRecord[], source: string) {
   const normalized = sortRecords(records);
   return {
     schema_version: "1.0",
@@ -82,14 +92,14 @@ function makeSnapshot(records, source) {
   };
 }
 
-function quoteCsv(value) {
+function quoteCsv(value: unknown): string {
   const text = value ?? "";
   return `"${String(text).replaceAll('"', '""')}"`;
 }
 
-function parseCsv(text) {
-  const rows = [];
-  let row = [];
+function parseCsv(text: string): Record<string, string>[] {
+  const rows: string[][] = [];
+  let row: string[] = [];
   let field = "";
   let quoted = false;
   for (let index = 0; index < text.length; index += 1) {
@@ -142,7 +152,16 @@ function generateRecords() {
   });
 }
 
-function fromJsonSource(source) {
+type JsonSourceRow = {
+  cep: string;
+  nombre_publico: string;
+  consejo: string;
+  estado: string;
+  actualizado_en: string;
+  foto: string | null;
+};
+
+function fromJsonSource(source: { rows: JsonSourceRow[] }): CanonicalRecord[] {
   return source.rows.map((row) => canonicalRecord({
     num_cep: row.cep,
     nombres_completos: row.nombre_publico,
@@ -153,7 +172,7 @@ function fromJsonSource(source) {
   }));
 }
 
-function fromCsvSource(text) {
+function fromCsvSource(text: string): CanonicalRecord[] {
   return parseCsv(text).map((row) => canonicalRecord({
     num_cep: row.numero_colegiatura,
     nombres_completos: row.nombres,
@@ -164,7 +183,7 @@ function fromCsvSource(text) {
   }));
 }
 
-function fromNdjsonSource(text) {
+function fromNdjsonSource(text: string): CanonicalRecord[] {
   return text.trim().split(/\r?\n/).map((line) => JSON.parse(line)).map((row) => canonicalRecord({
     num_cep: row.registration.number,
     nombres_completos: row.person.displayName,

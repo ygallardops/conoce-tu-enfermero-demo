@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 const baseUrl = new URL(process.env.DEMO_BASE_URL ?? "https://enfermeros-demo.yersongallardo.com");
 if (baseUrl.protocol !== "https:") throw new Error("DEMO_BASE_URL debe usar HTTPS.");
 
-function assertSecurityHeaders(response, { noStore = false } = {}) {
+function assertSecurityHeaders(response: Response, { noStore = false } = {}) {
   assert.equal(response.headers.get("x-content-type-options"), "nosniff");
   assert.match(response.headers.get("strict-transport-security") ?? "", /max-age=31536000/);
   if (noStore) assert.equal(response.headers.get("cache-control"), "no-store");

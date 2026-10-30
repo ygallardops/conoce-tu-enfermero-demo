@@ -19,9 +19,12 @@ app/coverage/
 *.tsbuildinfo
 
 # Configuracion de despliegue generada.
-# wrangler.jsonc no versiona database_id: lo inyecta scripts/deploy/wrangler-config.mjs
+# wrangler.jsonc no versiona database_id: lo inyecta scripts/deploy/wrangler-config.ts
 # desde CLOUDFLARE_D1_DATABASE_ID, en el fichero que se ignora aqui.
 app/wrangler.deploy.jsonc
+
+# Tipos del runtime de Workers; los genera `pnpm run typecheck` con wrangler types.
+app/worker-configuration.d.ts
 
 # Variables, secretos y credenciales
 .env

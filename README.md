@@ -77,7 +77,7 @@ La actualización prevista es unidireccional: del origen privado sale una export
 
 ## Inicio rápido
 
-Requisitos: Node.js `22.13` o superior y Corepack disponible.
+Requisitos: Node.js `22.18` o superior y Corepack disponible.
 
 ```bash
 git clone https://github.com/ygallardops/conoce-tu-enfermero-demo.git
@@ -89,6 +89,7 @@ pnpm run data:demo
 pnpm run data:verify
 pnpm run data:import:check
 pnpm run data:local:init
+pnpm run typecheck
 pnpm run lint
 pnpm run test
 pnpm exec wrangler dev --local

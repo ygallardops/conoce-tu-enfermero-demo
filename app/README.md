@@ -4,7 +4,7 @@ Miniaplicación Cloudflare que sustituye el validador público legado sin recons
 
 ## Requisitos
 
-- Node.js 22.13 o superior.
+- Node.js 22.18 o superior.
 - pnpm 11.16.0, activado mediante Corepack.
 
 ## Ejecución local
@@ -17,6 +17,7 @@ pnpm run data:demo
 pnpm run data:verify
 pnpm run data:import:check
 pnpm run data:local:init
+pnpm run typecheck
 pnpm run lint
 pnpm run test
 pnpm run dev
@@ -78,7 +79,7 @@ Configuración de runtime:
 - `ALLOWED_FRAME_ANCESTORS`: lista opcional, separada por comas, de orígenes HTTPS autorizados para iframe.
 - `DB`: binding D1 de la proyección pública.
 
-La ingesta remota se ejecuta fuera del Worker mediante `scripts/data/import-d1.mjs`. Su modo predeterminado es `dry-run`; `--apply` exige confirmación exacta de la versión y `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` y `CLOUDFLARE_D1_DATABASE_ID` por entorno. Un snapshot sin registros se rechaza siempre, y una variación de más del 10 % en el número de registros respecto al activo detiene la ingesta hasta repetirla con `--confirm-variation` y la cifra indicada.
+La ingesta remota se ejecuta fuera del Worker mediante `scripts/data/import-d1.ts`. Su modo predeterminado es `dry-run`; `--apply` exige confirmación exacta de la versión y `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` y `CLOUDFLARE_D1_DATABASE_ID` por entorno. Un snapshot sin registros se rechaza siempre, y una variación de más del 10 % en el número de registros respecto al activo detiene la ingesta hasta repetirla con `--confirm-variation` y la cifra indicada.
 
 `wrangler.jsonc` no versiona el identificador de la base D1: lo inyecta `deploy:config` al desplegar.
 

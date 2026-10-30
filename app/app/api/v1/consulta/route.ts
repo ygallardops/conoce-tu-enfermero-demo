@@ -1,8 +1,8 @@
 import { env } from "cloudflare:workers";
 import { queryPublicRegistry } from "@/lib/padron";
-import { validateConsultaPayload } from "@/lib/consulta.mjs";
-import { readRequestJson, RequestPayloadError } from "@/lib/http-request.mjs";
-import { verifyTurnstile } from "@/lib/turnstile.mjs";
+import { validateConsultaPayload } from "@/lib/consulta";
+import { readRequestJson, RequestPayloadError } from "@/lib/http-request";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 function responseHeaders(requestId: string) {
   return {

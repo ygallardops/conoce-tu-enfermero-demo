@@ -4,21 +4,22 @@
   "private": true,
   "packageManager": "pnpm@11.16.0",
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=22.18.0"
   },
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "vinext build && node --test tests/*.test.mjs",
+    "test": "vinext build && node --test tests/*.test.ts",
+    "typecheck": "wrangler types && tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "data:demo": "node scripts/data/generate-demo.mjs",
-    "data:verify": "node scripts/data/verify-demo.mjs",
-    "data:import:check": "node scripts/data/import-d1.mjs data/demo/canonical/padron-snapshot.json",
-    "data:local:init": "node scripts/data/seed-local-d1.mjs",
-    "deploy:config": "node scripts/deploy/wrangler-config.mjs",
-    "security:smoke:live": "node scripts/security/smoke-live.mjs",
+    "data:demo": "node scripts/data/generate-demo.ts",
+    "data:verify": "node scripts/data/verify-demo.ts",
+    "data:import:check": "node scripts/data/import-d1.ts data/demo/canonical/padron-snapshot.json",
+    "data:local:init": "node scripts/data/seed-local-d1.ts",
+    "deploy:config": "node scripts/deploy/wrangler-config.ts",
+    "security:smoke:live": "node scripts/security/smoke-live.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

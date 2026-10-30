@@ -15,16 +15,24 @@ const forbiddenFields = new Set([
   "fecha_nacimiento", "deuda", "pagos",
 ]);
 
-function fail(message) {
+type DemoRecord = Record<string, string>;
+type DemoSnapshot = {
+  schema_version: string;
+  record_count: number;
+  checksum_sha256: string;
+  records: DemoRecord[];
+};
+
+function fail(message: string): never {
   throw new Error(message);
 }
 
-function calculateChecksum(records) {
+function calculateChecksum(records: DemoRecord[]) {
   const sorted = [...records].sort((a, b) => a.num_cep.localeCompare(b.num_cep));
   return createHash("sha256").update(JSON.stringify(sorted)).digest("hex");
 }
 
-function validateSnapshot(snapshot, file) {
+function validateSnapshot(snapshot: DemoSnapshot, file: string) {
   if (snapshot.schema_version !== "1.0") fail(`${file}: versión de esquema inválida.`);
   if (!Array.isArray(snapshot.records)) fail(`${file}: records no es un arreglo.`);
   if (snapshot.record_count !== snapshot.records.length) fail(`${file}: record_count inconsistente.`);
@@ -54,7 +62,7 @@ function validateSnapshot(snapshot, file) {
 
 const snapshots = await Promise.all(files.map(async (file) => {
   const content = await readFile(resolve(canonicalDir, file), "utf8");
-  return [file, JSON.parse(content)];
+  return [file, JSON.parse(content) as DemoSnapshot] as const;
 }));
 const checksums = snapshots.map(([file, snapshot]) => validateSnapshot(snapshot, file));
 if (new Set(checksums).size !== 1) fail("Los adaptadores no son equivalentes.");
