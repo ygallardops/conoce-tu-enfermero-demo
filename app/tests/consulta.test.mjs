@@ -74,8 +74,8 @@ test("solo habilita iframe para origenes HTTPS explicitamente aprobados", async 
 });
 
 test("el endpoint de imágenes conserva su CSP de aislamiento", async () => {
-  const response = await fetchWorker("/_vinext/image?url=/og.png&w=640&q=75", {}, {
-    ASSETS: { fetch: async () => new Response("png", { headers: { "content-type": "image/png" } }) },
+  const response = await fetchWorker("/_vinext/image?url=/og-card.jpg&w=640&q=75", {}, {
+    ASSETS: { fetch: async () => new Response("jpg", { headers: { "content-type": "image/jpeg" } }) },
     IMAGES: {
       input: () => ({
         transform: () => ({
@@ -161,26 +161,24 @@ test("publica una imagen social propia para vistas previas", async () => {
   assert.ok(image.size < 300_000);
 });
 
-test("mantiene alineados los contratos del número CEP y el hosting", async () => {
-  const [schemaText, openapi, hostingText, wranglerText, viteText, assetHeaders] = await Promise.all([
+test("mantiene alineados los contratos del número CEP y los bindings", async () => {
+  const [schemaText, openapi, wranglerText, viteText, assetHeaders] = await Promise.all([
     readFile(new URL("../../contracts/padron-snapshot.schema.json", import.meta.url), "utf8"),
     readFile(new URL("../../openapi/consulta-api.yaml", import.meta.url), "utf8"),
-    readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
     readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
     readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
     readFile(new URL("../public/_headers", import.meta.url), "utf8"),
   ]);
   const schema = JSON.parse(schemaText);
-  const hosting = JSON.parse(hostingText);
+  const wrangler = JSON.parse(wranglerText);
 
   assert.equal(schema.$defs.public_record.properties.num_cep.pattern, "^[0-9]{5,6}$");
   assert.match(openapi, /pattern: '\^\[0-9\]\{5,6\}\$'/);
   assert.match(openapi, /'413':/);
   assert.match(openapi, /'415':/);
-  assert.equal(hosting.d1, "DB");
-  assert.equal("r2" in hosting, false);
+  assert.deepEqual(wrangler.d1_databases.map((binding) => binding.binding), ["DB"]);
+  assert.equal("r2_buckets" in wrangler, false);
   // Ningun identificador de cuenta en el repositorio publico.
-  assert.equal("project_id" in hosting, false);
   assert.doesNotMatch(wranglerText, /database_id/);
   assert.doesNotMatch(wranglerText, /run_worker_first/);
   assert.doesNotMatch(viteText, /compatibility_flags/);
