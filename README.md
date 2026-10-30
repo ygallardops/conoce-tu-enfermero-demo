@@ -7,9 +7,9 @@
 Prototipo para sustituir el validador `/validar/` del Colegio de Enfermeros del Perú (CEP)
 
 [![Demo en vivo](https://img.shields.io/badge/demo-en%20vivo-0f766e?style=flat-square&logo=cloudflare&logoColor=white)](https://enfermeros-demo.yersongallardo.com/)
-[![DevSecOps](https://img.shields.io/github/actions/workflow/status/ygallardops/conoce-tu-enfermero-demo/devsecops.yml?branch=main&style=flat-square&label=DevSecOps&cacheSeconds=3600)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/devsecops.yml)
-[![Despliegue](https://img.shields.io/github/actions/workflow/status/ygallardops/conoce-tu-enfermero-demo/deploy.yml?branch=main&style=flat-square&label=despliegue)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/deploy.yml)
-[![DAST](https://img.shields.io/github/actions/workflow/status/ygallardops/conoce-tu-enfermero-demo/dast.yml?branch=main&style=flat-square&label=DAST&cacheSeconds=3600)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/dast.yml)
+[![DevSecOps](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/devsecops.yml/badge.svg?branch=main)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/devsecops.yml)
+[![Despliegue](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/deploy.yml)
+[![DAST](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/dast.yml/badge.svg?branch=main)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/dast.yml)
 [![Licencia MIT](https://img.shields.io/badge/licencia-MIT-blue?style=flat-square)](LICENSE)
 
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-F38020?style=flat-square&logo=cloudflareworkers&logoColor=white)](https://developers.cloudflare.com/workers/)
