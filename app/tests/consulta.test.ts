@@ -141,7 +141,7 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   assert.match(layout, /summary_large_image/);
   assert.match(layout, /og-card\.jpg/);
   assert.match(layout, /image\/jpeg/);
-  assert.match(layout, /20260810-3/);
+  assert.match(layout, /20261030-1/);
   assert.match(layout, /Conoce a tu Enfermera\(o\)/);
   assert.doesNotMatch(client, /hero-promises|Sin registro|Coincidencia exacta/);
   assert.doesNotMatch(client, /style=\{/);
