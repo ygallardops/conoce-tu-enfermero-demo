@@ -22,15 +22,6 @@ type ConsultaResponse = {
   datos_actualizados_al: string;
 };
 
-function initials(name: string) {
-  return name
-    .split(" ")
-    .filter((word) => !["PERSONA", "SINTETICA"].includes(word))
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("");
-}
-
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("es-PE", {
     dateStyle: "long",
@@ -38,23 +29,17 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function ResultAvatar({ record }: { record: PublicRecord }) {
+function ResultPhoto({ record }: { record: PublicRecord }) {
   const [failed, setFailed] = useState(false);
 
-  if (!record.foto_url || failed) {
-    return (
-      <span className="result-avatar result-avatar--placeholder" aria-hidden="true">
-        {initials(record.nombres_completos)}
-      </span>
-    );
-  }
+  if (!record.foto_url || failed) return null;
 
   return (
     // The production adapter allows only approved photo hosts. The demo deliberately
-    // uses synthetic paths, so an unavailable image degrades to the initials avatar.
+    // uses synthetic paths, so an unavailable image is simply left out.
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      className="result-avatar"
+      className="result-photo"
       src={record.foto_url}
       alt={`Fotografía pública de ${record.nombres_completos}`}
       loading="lazy"
@@ -203,52 +188,59 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
   }
 
   return (
-    <main className="site-shell" data-brand-profile={brand.id}>
+    <div className="site-shell" data-brand-profile={brand.id}>
       <header className="topbar">
-        <a className="brand" href="#consulta" aria-label={`${brand.productName}, ir a la consulta`}>
-          <span className="brand-mark" aria-hidden="true">ED</span>
-          <span>
-            <strong>{brand.productName}</strong>
-            <small>{brand.issuerName}</small>
-          </span>
-        </a>
-        <span className="environment-tag">{brand.environmentLabel}</span>
+        <div className="container">
+          <a className="brand" href="#consulta">{brand.productName}</a>
+          <span className="issuer">{brand.issuerName}</span>
+        </div>
       </header>
+      <div className="phase-banner">
+        <p className="container">
+          <strong className="phase-tag">{brand.environmentLabel}</strong>
+          <span>{brand.disclaimer}</span>
+        </p>
+      </div>
 
-      <section className="hero" aria-labelledby="page-title">
-        <p className="eyebrow">Consulta pública de colegiatura</p>
-        <h1 id="page-title">Consulta a un profesional de enfermería</h1>
-        <p className="hero-copy">
-          Busca por número CEP o nombre completo.
+      <main className="container page">
+      <section id="consulta" className="intro" aria-labelledby="page-title">
+        <h1 id="page-title">Verifica si un profesional de enfermería está habilitado</h1>
+        <p className="lead">
+          Busca por número de colegiatura o por nombre completo. Es gratis y no necesitas registrarte.
         </p>
       </section>
 
-      <section id="consulta" className="consultation-card" aria-label="Formulario de consulta">
+      <section className="consultation" aria-label="Formulario de consulta">
         <form onSubmit={handleSubmit} noValidate>
-          <fieldset className="search-type" aria-label="Tipo de consulta">
-            <legend>Buscar por</legend>
-            <button
-              className={searchType === "cep" ? "search-option search-option--selected" : "search-option"}
-              type="button"
-              aria-pressed={searchType === "cep"}
-              onClick={() => changeSearchType("cep")}
-            >
+          <fieldset className="search-type">
+            <legend>¿Cómo quieres buscar?</legend>
+            <label className="radio">
+              <input
+                type="radio"
+                name="tipo"
+                checked={searchType === "cep"}
+                onChange={() => changeSearchType("cep")}
+              />
               Número CEP
-            </button>
-            <button
-              className={searchType === "nombre" ? "search-option search-option--selected" : "search-option"}
-              type="button"
-              aria-pressed={searchType === "nombre"}
-              onClick={() => changeSearchType("nombre")}
-            >
+            </label>
+            <label className="radio">
+              <input
+                type="radio"
+                name="tipo"
+                checked={searchType === "nombre"}
+                onChange={() => changeSearchType("nombre")}
+              />
               Nombre completo
-            </button>
+            </label>
           </fieldset>
 
-          <label className="search-label" htmlFor="consulta-valor">
-            {searchType === "cep" ? "Número de colegiatura CEP" : "Nombre completo del profesional"}
-          </label>
-          <div className="search-row">
+          <div className={searchType === "cep" ? "field field--cep" : "field"}>
+            <label htmlFor="consulta-valor">
+              {searchType === "cep" ? "Número de colegiatura CEP" : "Nombre completo del profesional"}
+            </label>
+            <p id="consulta-help" className="field-help">
+              {searchHelp}
+            </p>
             <input
               id="consulta-valor"
               name="valor"
@@ -269,23 +261,18 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
               pattern={searchType === "cep" ? "[0-9]{5,6}" : undefined}
               aria-describedby="consulta-help consulta-status"
             />
-            <button className="search-submit" type="submit" disabled={isLoading}>
-              {isLoading ? "Consultando…" : "Consultar"}
-            </button>
           </div>
-          <p id="consulta-help" className="field-help">
-            {searchHelp}
-          </p>
           <div ref={turnstileElement} className="turnstile" aria-label="Verificación anti-bots" />
           {formAlert ? <p className="form-alert" role="alert">{formAlert}</p> : null}
+          <button className="search-submit" type="submit" disabled={isLoading}>
+            {isLoading ? "Consultando…" : "Consultar"}
+          </button>
         </form>
       </section>
 
       {hasSearched ? <section ref={resultsSection} className="results" aria-labelledby="resultados-title">
-        <div className="results-heading">
-          <h2 ref={resultsHeading} id="resultados-title" tabIndex={-1}>Resultado</h2>
-          {updatedAt ? <span className="updated-at">Datos actualizados: {formatDate(updatedAt)}</span> : null}
-        </div>
+        <h2 ref={resultsHeading} id="resultados-title" tabIndex={-1}>Resultado</h2>
+        {updatedAt ? <p className="updated-at">Datos actualizados al {formatDate(updatedAt)}</p> : null}
 
         <p id="consulta-status" className="status-message" role="status" aria-live="polite">
           {message}
@@ -298,21 +285,31 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
           </div>
         ) : null}
 
-        <div className="result-grid">
-          {results.map((record) => (
-            <article className="result-card" key={record.num_cep}>
-              <div className="result-identification">
-                <ResultAvatar record={record} />
-                <div>
-                  <p className="result-name">{record.nombres_completos}</p>
-                  <p className="result-cep">CEP {record.num_cep}</p>
-                </div>
+        {results.map((record) => {
+          const enabled = record.estado_habilidad === "Habilitado";
+          return (
+            <article className="result" key={record.num_cep}>
+              <div className={`status-panel status-panel--${enabled ? "enabled" : "disabled"}`}>
+                <p className="status-label">Estado de habilidad</p>
+                <p className="status-value">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d={enabled ? "M4 12.5l5 5L20 6.5" : "M6 6l12 12M18 6L6 18"} />
+                  </svg>
+                  {record.estado_habilidad}
+                </p>
+                {enabled ? null : (
+                  <p className="status-detail">No figura como habilitado para ejercer a la fecha de actualización.</p>
+                )}
               </div>
-              <span className={`ability-status ability-status--${record.estado_habilidad === "Habilitado" ? "enabled" : "disabled"}`}>
-                <span aria-hidden="true">{record.estado_habilidad === "Habilitado" ? "●" : "◆"}</span>
-                {record.estado_habilidad}
-              </span>
-              <dl className="result-details">
+              <div className="result-identification">
+                <ResultPhoto record={record} />
+                <p className="result-name">{record.nombres_completos}</p>
+              </div>
+              <dl className="summary">
+                <div>
+                  <dt>Número CEP</dt>
+                  <dd className="cep">{record.num_cep}</dd>
+                </div>
                 <div>
                   <dt>Consejo regional</dt>
                   <dd>{record.consejo_regional}</dd>
@@ -324,18 +321,16 @@ export function ConsultaClient({ brand }: { brand: BrandProfile }) {
               </dl>
               <p className="result-disclaimer">La consulta demo no constituye una constancia oficial.</p>
             </article>
-          ))}
-        </div>
-      </section> : null}
+          );
+        })}
 
-      <aside className="disclaimer" aria-label="Información de la demostración">
-        <span className="disclaimer-icon" aria-hidden="true">i</span>
-        <strong>{brand.disclaimer}</strong>
-      </aside>
+        <p className="again"><a href="#consulta">Hacer otra consulta</a></p>
+      </section> : null}
+      </main>
 
       <footer className="footer">
-        <span>{brand.productName}</span>
+        <p className="container">{brand.productName}</p>
       </footer>
-    </main>
+    </div>
   );
 }

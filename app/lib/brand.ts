@@ -21,7 +21,7 @@ const profiles: Record<BrandProfileId, BrandProfile> = {
     environmentLabel: "Entorno demo",
     disclaimer: "Prototipo personal no oficial · Datos sintéticos",
     officialPreview: false,
-    tokens: { primary: "#168fbb", primaryDark: "#18355f" },
+    tokens: { primary: "#1d70b8", primaryDark: "#0b3d63" },
   },
   "cep-preview": {
     id: "cep-preview",

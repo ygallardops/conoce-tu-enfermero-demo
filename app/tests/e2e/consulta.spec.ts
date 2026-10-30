@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("presenta la consulta con el aviso de datos sinteticos", async ({ page }) => {
-  await expect(page.getByRole("heading", { name: "Consulta a un profesional de enfermería" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Verifica si un profesional de enfermería está habilitado" })).toBeVisible();
   await expect(page.getByText("Prototipo personal no oficial")).toBeVisible();
   await expect(page.getByText("Datos sintéticos")).toBeVisible();
 });
@@ -62,12 +62,13 @@ test("el campo CEP descarta lo que no sean digitos y corta en seis", async ({ pa
 test("cambiar de tipo de busqueda limpia el campo y ajusta la ayuda", async ({ page }) => {
   await page.getByLabel("Número de colegiatura CEP").fill("00001");
 
-  await page.getByRole("button", { name: "Nombre completo" }).click();
+  await page.getByRole("radio", { name: "Nombre completo" }).check();
 
   const campo = page.getByLabel("Nombre completo del profesional");
   await expect(campo).toHaveValue("");
   await expect(page.getByText("Escribe el nombre completo tal como aparece en el padrón.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Nombre completo" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("radio", { name: "Nombre completo" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Número CEP" })).not.toBeChecked();
 });
 
 test("el formulario es operable con teclado y tiene etiquetas asociadas", async ({ page }) => {
