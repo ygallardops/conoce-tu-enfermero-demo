@@ -7,13 +7,13 @@
 Prototipo para sustituir el validador `/validar/` del Colegio de Enfermeros del Perú (CEP)
 
 [![Demo en vivo](https://img.shields.io/badge/demo-en%20vivo-0f766e?style=flat-square&logo=cloudflare&logoColor=white)](https://enfermeros-demo.yersongallardo.com/)
-[![DevSecOps](https://img.shields.io/github/actions/workflow/status/ygallardops/conoce-tu-enfermero-demo/devsecops.yml?branch=main&style=flat-square&label=DevSecOps)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/devsecops.yml)
+[![DevSecOps](https://img.shields.io/github/actions/workflow/status/ygallardops/conoce-tu-enfermero-demo/devsecops.yml?branch=main&style=flat-square&label=DevSecOps&cacheSeconds=3600)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/devsecops.yml)
 [![Despliegue](https://img.shields.io/github/actions/workflow/status/ygallardops/conoce-tu-enfermero-demo/deploy.yml?branch=main&style=flat-square&label=despliegue)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/deploy.yml)
-[![DAST](https://img.shields.io/github/actions/workflow/status/ygallardops/conoce-tu-enfermero-demo/dast.yml?branch=main&style=flat-square&label=DAST)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/dast.yml)
+[![DAST](https://img.shields.io/github/actions/workflow/status/ygallardops/conoce-tu-enfermero-demo/dast.yml?branch=main&style=flat-square&label=DAST&cacheSeconds=3600)](https://github.com/ygallardops/conoce-tu-enfermero-demo/actions/workflows/dast.yml)
 [![Licencia MIT](https://img.shields.io/badge/licencia-MIT-blue?style=flat-square)](LICENSE)
 
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-F38020?style=flat-square&logo=cloudflareworkers&logoColor=white)](https://developers.cloudflare.com/workers/)
-[![React 19](https://img.shields.io/badge/React%2019-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![React 19](https://img.shields.io/badge/React%2019-20232A?style=flat-square&logo=react&logoColor=61DAFB&cacheSeconds=86400)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Terraform](https://img.shields.io/badge/Terraform-844FBA?style=flat-square&logo=terraform&logoColor=white)](https://www.terraform.io/)
 
@@ -91,7 +91,7 @@ pnpm run data:import:check
 pnpm run data:local:init
 pnpm run lint
 pnpm run test
-pnpm run dev
+pnpm exec wrangler dev --local
 ```
 
 | Script | Qué hace |
@@ -100,6 +100,7 @@ pnpm run dev
 | `data:import:check` | Valida el plan de ingesta sin red ni credenciales. |
 | `data:local:init` | Carga exclusivamente el snapshot sintético en D1 local. |
 | `test` | Compila la aplicación y ejecuta las pruebas automatizadas. |
+| `wrangler dev --local` | Sirve el build en el runtime de Workers, con D1 local. `pnpm run dev` no sirve para probar la interfaz: la CSP bloquea `eval`, que React necesita en desarrollo, y la página no llega a hidratarse. |
 
 > [!NOTE]
 > En local se ven la interfaz y los rechazos, no los resultados. Turnstile falla de forma cerrada: sin `TURNSTILE_SECRET_KEY` la API responde 503, y con las claves de prueba de Cloudflare responde 403, porque Siteverify no acredita entonces el hostname ni la acción que el Worker exige. Una consulta con resultados se comprueba en la [demo publicada](https://enfermeros-demo.yersongallardo.com/).
