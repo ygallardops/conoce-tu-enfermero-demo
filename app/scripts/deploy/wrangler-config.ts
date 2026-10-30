@@ -9,8 +9,8 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 export const sourceConfigPath = resolve(appDir, "wrangler.jsonc");
 export const deployConfigPath = resolve(appDir, "wrangler.deploy.jsonc");
 
-export function withDatabaseId(configText, databaseId) {
-  let config;
+export function withDatabaseId(configText: string, databaseId: string | undefined): string {
+  let config: { d1_databases?: unknown };
   try {
     config = JSON.parse(configText);
   } catch {
@@ -20,7 +20,7 @@ export function withDatabaseId(configText, databaseId) {
     throw new Error("CLOUDFLARE_D1_DATABASE_ID ausente o con un formato distinto de un UUID.");
   }
   const bindings = config.d1_databases;
-  if (!Array.isArray(bindings) || bindings.length !== 1) {
+  if (!Array.isArray(bindings) || bindings.length !== 1 || typeof bindings[0] !== "object" || bindings[0] === null) {
     throw new Error("Se espera exactamente un binding de D1 en wrangler.jsonc.");
   }
   if ("database_id" in bindings[0]) {

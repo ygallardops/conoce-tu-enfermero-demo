@@ -8,7 +8,7 @@
 *.tsx text eol=lf
 *.mjs text eol=lf
 *.sql text eol=lf
-# Los origenes simulados del padron los reescribe scripts/data/generate-demo.mjs
+# Los origenes simulados del padron los reescribe scripts/data/generate-demo.ts
 # siempre con LF. Sin eol=lf se extraen con CRLF en Windows y cada ejecucion de
 # data:demo deja el arbol sucio sin que cambie el contenido.
 *.csv text eol=lf

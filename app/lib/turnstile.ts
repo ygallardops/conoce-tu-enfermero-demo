@@ -1,7 +1,18 @@
 export const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 export const TURNSTILE_TIMEOUT_MS = 5_000;
 
-export async function verifyTurnstile(token, config, fetchImpl = fetch) {
+export type TurnstileConfig = {
+  secret?: string;
+  expectedHostname?: string;
+  expectedAction?: string;
+  remoteIp?: string | null;
+};
+
+export async function verifyTurnstile(
+  token: string,
+  config: TurnstileConfig,
+  fetchImpl: typeof fetch = fetch,
+): Promise<"valid" | "invalid" | "unavailable"> {
   const { secret, expectedHostname, expectedAction, remoteIp } = config;
   if (!secret || !expectedHostname || !expectedAction) return "unavailable";
 
@@ -17,7 +28,7 @@ export async function verifyTurnstile(token, config, fetchImpl = fetch) {
       signal: AbortSignal.timeout(TURNSTILE_TIMEOUT_MS),
     });
     if (!response.ok) return "unavailable";
-    const result = await response.json();
+    const result = (await response.json()) as { success?: unknown; hostname?: unknown; action?: unknown };
     if (result.success !== true) return "invalid";
     return result.hostname === expectedHostname && result.action === expectedAction ? "valid" : "invalid";
   } catch {

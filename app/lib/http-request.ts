@@ -1,13 +1,15 @@
 export const MAX_REQUEST_BODY_BYTES = 8_192;
 
 export class RequestPayloadError extends Error {
-  constructor(status, message) {
+  status: number;
+
+  constructor(status: number, message: string) {
     super(message);
     this.status = status;
   }
 }
 
-export async function readRequestJson(request) {
+export async function readRequestJson(request: Request): Promise<unknown> {
   const contentType = request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
   if (contentType !== "application/json") {
     throw new RequestPayloadError(415, "La consulta debe enviarse como JSON.");
@@ -20,7 +22,7 @@ export async function readRequestJson(request) {
   if (!request.body) throw new RequestPayloadError(400, "El formato de la consulta no es válido.");
 
   const reader = request.body.getReader();
-  const chunks = [];
+  const chunks: Uint8Array[] = [];
   let totalBytes = 0;
   try {
     while (true) {

@@ -21,15 +21,38 @@ const recordFields = [
 const unsafeFormatCharacters = /[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/u;
 const photoHostPattern = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
 
-function fail(message) {
+export type CanonicalRecord = {
+  num_cep: string;
+  nombres_completos: string;
+  consejo_regional: string;
+  estado_habilidad: "Habilitado" | "Inhabilitado";
+  fecha_actualizacion: string;
+  foto_url: string | null;
+};
+
+export type CanonicalSnapshot = {
+  schema_version: "1.0";
+  dataset_version: string;
+  generated_at: string;
+  source: string;
+  record_count: number;
+  checksum_sha256: string;
+  records: CanonicalRecord[];
+};
+
+export type ValidationOptions = { now?: Date; allowedPhotoHosts?: readonly string[] };
+
+type UnknownObject = Record<string, unknown>;
+
+function fail(message: string): never {
   throw new Error(message);
 }
 
-function isPlainObject(value) {
+function isPlainObject(value: unknown): value is UnknownObject {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function assertExactFields(value, expected, context) {
+function assertExactFields(value: UnknownObject, expected: readonly string[], context: string) {
   const actual = Object.keys(value).sort();
   const wanted = [...expected].sort();
   if (actual.length !== wanted.length || actual.some((field, index) => field !== wanted[index])) {
@@ -37,7 +60,12 @@ function assertExactFields(value, expected, context) {
   }
 }
 
-function assertCanonicalText(value, field, minLength, maxLength) {
+function assertCanonicalText(
+  value: unknown,
+  field: string,
+  minLength: number,
+  maxLength: number,
+): asserts value is string {
   if (typeof value !== "string") fail(`${field}: debe ser texto.`);
   if (value.length < minLength || value.length > maxLength) fail(`${field}: longitud inválida.`);
   if (value !== value.trim().normalize("NFC")) fail(`${field}: debe estar recortado y normalizado en NFC.`);
@@ -50,13 +78,17 @@ function assertCanonicalText(value, field, minLength, maxLength) {
   }
 }
 
-function assertDate(value, field, now) {
+function assertDate(value: unknown, field: string, now: Date): asserts value is string {
   if (typeof value !== "string" || Number.isNaN(Date.parse(value))) fail(`${field}: fecha inválida.`);
   if (new Date(value).toISOString() !== value) fail(`${field}: debe usar ISO 8601 UTC canónico.`);
   if (Date.parse(value) > now.getTime() + 86_400_000) fail(`${field}: fecha futura fuera de tolerancia.`);
 }
 
-function assertPhotoUrl(value, field, allowedPhotoHosts) {
+function assertPhotoUrl(
+  value: unknown,
+  field: string,
+  allowedPhotoHosts: Set<string>,
+): asserts value is string | null {
   if (value === null) return;
   assertCanonicalText(value, field, 1, 500);
   if (value.startsWith("/")) {
@@ -66,7 +98,7 @@ function assertPhotoUrl(value, field, allowedPhotoHosts) {
     return;
   }
 
-  let parsed;
+  let parsed: URL;
   try {
     parsed = new URL(value);
   } catch {
@@ -83,9 +115,9 @@ function assertPhotoUrl(value, field, allowedPhotoHosts) {
   }
 }
 
-export function parseAllowedPhotoHosts(value) {
+export function parseAllowedPhotoHosts(value: unknown): string[] {
   if (value === undefined || value === null) return [];
-  const hosts = [];
+  const hosts: string[] = [];
   for (const entry of String(value).split(",")) {
     const host = entry.trim().toLowerCase();
     if (!host) continue;
@@ -97,12 +129,12 @@ export function parseAllowedPhotoHosts(value) {
   return hosts;
 }
 
-export function calculateRecordsChecksum(records) {
+export function calculateRecordsChecksum(records: readonly { num_cep: string }[]): string {
   const sorted = [...records].sort((left, right) => left.num_cep.localeCompare(right.num_cep));
   return createHash("sha256").update(JSON.stringify(sorted)).digest("hex");
 }
 
-export function validateCanonicalSnapshot(snapshot, options = {}) {
+export function validateCanonicalSnapshot(snapshot: unknown, options: ValidationOptions = {}) {
   const now = options.now ?? new Date();
   const allowedPhotoHosts = new Set(
     (options.allowedPhotoHosts ?? []).map((hostname) => String(hostname).trim().toLowerCase()),
@@ -116,17 +148,18 @@ export function validateCanonicalSnapshot(snapshot, options = {}) {
   }
   assertDate(snapshot.generated_at, "generated_at", now);
   assertCanonicalText(snapshot.source, "source", 1, 120);
-  if (!Number.isInteger(snapshot.record_count) || snapshot.record_count < 0 || snapshot.record_count > 1_000_000) {
+  if (typeof snapshot.record_count !== "number" || !Number.isInteger(snapshot.record_count) || snapshot.record_count < 0 || snapshot.record_count > 1_000_000) {
     fail("record_count: valor inválido.");
   }
   if (snapshot.record_count === 0) {
     fail("record_count: un snapshot sin registros no es publicable; retirar el padrón es otra operación.");
   }
-  if (!/^[a-f0-9]{64}$/.test(snapshot.checksum_sha256)) fail("checksum_sha256: formato inválido.");
+  if (typeof snapshot.checksum_sha256 !== "string" || !/^[a-f0-9]{64}$/.test(snapshot.checksum_sha256)) fail("checksum_sha256: formato inválido.");
   if (!Array.isArray(snapshot.records)) fail("records: debe ser un arreglo.");
   if (snapshot.record_count !== snapshot.records.length) fail("record_count: no coincide con records.");
 
-  const seen = new Set();
+  const seen = new Set<string>();
+  const records: CanonicalRecord[] = [];
   for (const [index, record] of snapshot.records.entries()) {
     const context = `records[${index}]`;
     if (!isPlainObject(record)) fail(`${context}: debe ser un objeto.`);
@@ -138,14 +171,15 @@ export function validateCanonicalSnapshot(snapshot, options = {}) {
     seen.add(record.num_cep);
     assertCanonicalText(record.nombres_completos, `${context}.nombres_completos`, 3, 160);
     assertCanonicalText(record.consejo_regional, `${context}.consejo_regional`, 3, 160);
-    if (!new Set(["Habilitado", "Inhabilitado"]).has(record.estado_habilidad)) {
+    if (!new Set<unknown>(["Habilitado", "Inhabilitado"]).has(record.estado_habilidad)) {
       fail(`${context}.estado_habilidad: valor inválido.`);
     }
     assertDate(record.fecha_actualizacion, `${context}.fecha_actualizacion`, now);
     assertPhotoUrl(record.foto_url, `${context}.foto_url`, allowedPhotoHosts);
+    records.push(record as CanonicalRecord);
   }
 
-  const checksum = calculateRecordsChecksum(snapshot.records);
+  const checksum = calculateRecordsChecksum(records);
   if (checksum !== snapshot.checksum_sha256) fail("checksum_sha256: no coincide con los registros.");
   return {
     datasetVersion: snapshot.dataset_version,

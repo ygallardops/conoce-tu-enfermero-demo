@@ -3,19 +3,19 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { buildImportPlan, readValidationOptions } from "./import-d1.mjs";
+import { buildImportPlan, readValidationOptions, type Statement } from "./import-d1.ts";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const appDir = resolve(scriptDir, "../..");
 const snapshotPath = resolve(appDir, "data/demo/canonical/padron-snapshot.json");
 
-function sqlLiteral(value) {
+function sqlLiteral(value: unknown): string {
   if (value === null) return "NULL";
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
   return `'${String(value).replaceAll("'", "''")}'`;
 }
 
-function renderStaticStatement(item) {
+function renderStaticStatement(item: Statement): string {
   const fragments = item.sql.split("?");
   if (fragments.length - 1 !== item.params.length) throw new Error("Cantidad de parámetros SQL inconsistente.");
   return fragments.map((fragment, index) => (
@@ -23,7 +23,7 @@ function renderStaticStatement(item) {
   )).join("");
 }
 
-function run(command, args) {
+function run(command: string, args: string[]): Promise<string> {
   return new Promise((resolvePromise, reject) => {
     const child = spawn(command, args, {
       cwd: appDir,
@@ -60,7 +60,7 @@ async function main() {
   }
   const plan = buildImportPlan(snapshot, { validationOptions: readValidationOptions() });
   const importedAt = new Date().toISOString();
-  const staging = {
+  const staging: Statement = {
     sql: `INSERT INTO padron_snapshots (
       dataset_version, schema_version, generated_at, source, record_count,
       checksum_sha256, status, imported_at

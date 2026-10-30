@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
 import { register } from "node:module";
 import test from "node:test";
-import { normalizeSearchValue, validateConsultaPayload } from "../lib/consulta.mjs";
-import { readRequestJson } from "../lib/http-request.mjs";
-import { SITEVERIFY_URL, verifyTurnstile } from "../lib/turnstile.mjs";
-import { withDatabaseId } from "../scripts/deploy/wrangler-config.mjs";
+import { normalizeSearchValue, validateConsultaPayload } from "../lib/consulta.ts";
+import { readRequestJson } from "../lib/http-request.ts";
+import { SITEVERIFY_URL, verifyTurnstile } from "../lib/turnstile.ts";
+import { withDatabaseId } from "../scripts/deploy/wrangler-config.ts";
 
 // El Worker compilado importa "cloudflare:workers" en el nivel superior (vinext
 // lo usa para el tracing) y Node no resuelve ese esquema. Se sustituye por un
@@ -18,7 +18,7 @@ register(`data:text/javascript,${encodeURIComponent(`
   }
 `)}`);
 
-async function fetchWorker(path, init = {}, overrides = {}) {
+async function fetchWorker(path: string, init: RequestInit = {}, overrides: Record<string, unknown> = {}): Promise<Response> {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
@@ -30,7 +30,7 @@ async function fetchWorker(path, init = {}, overrides = {}) {
   );
 }
 
-async function render(overrides = {}) {
+async function render(overrides: Record<string, unknown> = {}) {
   return fetchWorker("/", { headers: { accept: "text/html" } }, overrides);
 }
 
@@ -115,7 +115,7 @@ test("renderiza la consulta pública y elimina el starter", async () => {
   const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
   const scriptSources = csp
     .split(";")
-    .map((directive) => directive.trim().split(/\s+/))
+    .map((directive: string) => directive.trim().split(/\s+/))
     .find(([directive]) => directive === "script-src") ?? [];
   const scriptSourceHosts = scriptSources
     .filter((source) => URL.canParse(source))
@@ -176,7 +176,7 @@ test("mantiene alineados los contratos del número CEP y los bindings", async ()
   assert.match(openapi, /pattern: '\^\[0-9\]\{5,6\}\$'/);
   assert.match(openapi, /'413':/);
   assert.match(openapi, /'415':/);
-  assert.deepEqual(wrangler.d1_databases.map((binding) => binding.binding), ["DB"]);
+  assert.deepEqual(wrangler.d1_databases.map((binding: { binding: string }) => binding.binding), ["DB"]);
   assert.equal("r2_buckets" in wrangler, false);
   // Ningun identificador de cuenta en el repositorio publico.
   assert.doesNotMatch(wranglerText, /database_id/);
@@ -210,7 +210,7 @@ test("separa la consulta pública de la ingesta del padrón", async () => {
   const [querySource, routeSource, importerSource] = await Promise.all([
     readFile(new URL("../lib/padron.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/v1/consulta/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../scripts/data/import-d1.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/data/import-d1.ts", import.meta.url), "utf8"),
   ]);
 
   assert.doesNotMatch(querySource, /\b(CREATE|INSERT|UPDATE|DELETE)\b/);
@@ -231,9 +231,9 @@ test("la API devuelve un identificador de soporte sin exponer la consulta", asyn
 
 test("la verificación Turnstile exige éxito, hostname y acción, y falla cerrada", async () => {
   const config = { secret: "s3cr3t", expectedHostname: "demo.example", expectedAction: "consulta_publica" };
-  const siteverify = (payload, init = {}) => async () => Response.json(payload, init);
+  const siteverify = (payload: unknown, init: ResponseInit = {}) => async () => Response.json(payload, init);
 
-  const casos = [
+  const casos: [string, typeof fetch, string][] = [
     ["éxito con hostname y acción esperados", siteverify({ success: true, hostname: "demo.example", action: "consulta_publica" }), "valid"],
     ["siteverify rechaza el token", siteverify({ success: false, "error-codes": ["invalid-input-response"] }), "invalid"],
     ["éxito resuelto en otro hostname", siteverify({ success: true, hostname: "atacante.example", action: "consulta_publica" }), "invalid"],
@@ -265,13 +265,14 @@ test("la verificación Turnstile envía el secreto, el token y la IP del consult
     expectedAction: "consulta_publica",
     remoteIp: "203.0.113.7",
   };
-  let enviado;
-  const captura = async (url, init) => {
-    enviado = { url, form: init.body, signal: init.signal, method: init.method };
+  let enviado: { url: unknown; form: FormData; signal: unknown; method: unknown } | undefined;
+  const captura = async (url: unknown, init?: RequestInit) => {
+    enviado = { url, form: init?.body as FormData, signal: init?.signal, method: init?.method };
     return Response.json({ success: true, hostname: "demo.example", action: "consulta_publica" });
   };
 
   assert.equal(await verifyTurnstile("token-de-prueba", config, captura), "valid");
+  assert.ok(enviado);
   assert.equal(enviado.url, SITEVERIFY_URL);
   assert.equal(enviado.method, "POST");
   assert.equal(enviado.form.get("secret"), "s3cr3t");
@@ -280,7 +281,7 @@ test("la verificación Turnstile envía el secreto, el token y la IP del consult
   assert.ok(enviado.signal instanceof AbortSignal);
 
   await verifyTurnstile("token-de-prueba", { ...config, remoteIp: null }, captura);
-  assert.equal(enviado.form.get("remoteip"), null, "sin IP no se envía el campo remoteip");
+  assert.equal(enviado?.form.get("remoteip"), null, "sin IP no se envía el campo remoteip");
 });
 
 test("la API limita Content-Type y tamaño antes de procesar JSON", async () => {
@@ -289,14 +290,14 @@ test("la API limita Content-Type y tamaño antes de procesar JSON", async () => 
     headers: { "content-type": "text/plain" },
     body: "consulta",
   });
-  await assert.rejects(readRequestJson(unsupported), (error) => error?.status === 415);
+  await assert.rejects(readRequestJson(unsupported), (error: { status?: number }) => error?.status === 415);
 
   const oversized = new Request("http://localhost/api/v1/consulta", {
     method: "POST",
     headers: { "content-type": "application/json", "content-length": "8193" },
     body: "{}",
   });
-  await assert.rejects(readRequestJson(oversized), (error) => error?.status === 413);
+  await assert.rejects(readRequestJson(oversized), (error: { status?: number }) => error?.status === 413);
 
   const valid = new Request("http://localhost/api/v1/consulta", {
     method: "POST",

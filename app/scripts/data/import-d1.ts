@@ -1,8 +1,23 @@
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { normalizeSearchValue } from "../../lib/consulta.mjs";
-import { parseAllowedPhotoHosts, validateCanonicalSnapshot } from "./snapshot-validation.mjs";
+import { normalizeSearchValue } from "../../lib/consulta.ts";
+import {
+  parseAllowedPhotoHosts,
+  validateCanonicalSnapshot,
+  type CanonicalSnapshot,
+  type ValidationOptions,
+} from "./snapshot-validation.ts";
+
+type SqlValue = string | number | null;
+export type Statement = { sql: string; params: SqlValue[] };
+type Row = Record<string, unknown>;
+type QueryResult = { success?: boolean; results?: Row[] };
+export type D1Client = { query(statements: Statement[]): Promise<QueryResult[]> };
+export type PlanOptions = { chunkSize?: number; validationOptions?: ValidationOptions };
+export type ApplyOptions = PlanOptions & { now?: Date; confirmVariation?: string | null };
+type RecordCountDelta = { previousRecordCount: number | null; variation: string | null };
+type RuntimeEnv = Record<string, string | undefined>;
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const defaultSnapshotPath = resolve(scriptDir, "../../data/demo/canonical/padron-snapshot.json");
@@ -30,17 +45,17 @@ const insertRecordSql = `INSERT INTO padron_publico (
   consejo_regional, estado_habilidad, fecha_actualizacion, foto_url
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
-function statement(sql, params = []) {
+function statement(sql: string, params: SqlValue[] = []): Statement {
   return { sql, params };
 }
 
-function chunks(values, size) {
-  const result = [];
+function chunks<T>(values: T[], size: number): T[][] {
+  const result: T[][] = [];
   for (let index = 0; index < values.length; index += size) result.push(values.slice(index, index + size));
   return result;
 }
 
-export function buildImportPlan(snapshot, options = {}) {
+export function buildImportPlan(snapshot: CanonicalSnapshot, options: PlanOptions = {}) {
   const chunkSize = options.chunkSize ?? defaultChunkSize;
   if (!Number.isInteger(chunkSize) || chunkSize < 1 || chunkSize > 250) {
     throw new Error("chunkSize debe estar entre 1 y 250.");
@@ -148,12 +163,12 @@ export function buildImportPlan(snapshot, options = {}) {
   };
 }
 
-export function parseCliArgs(argv) {
+export function parseCliArgs(argv: string[]) {
   const options = {
     apply: false,
     chunkSize: defaultChunkSize,
-    confirmDataset: null,
-    confirmVariation: null,
+    confirmDataset: null as string | null,
+    confirmVariation: null as string | null,
     snapshotPath: defaultSnapshotPath,
     help: false,
   };
@@ -173,19 +188,23 @@ export function parseCliArgs(argv) {
   return options;
 }
 
-export function calculateRecordCountVariation(activeCount, candidateCount) {
+export function calculateRecordCountVariation(activeCount: unknown, candidateCount: number): number | null {
   const previous = Number(activeCount);
   if (!Number.isFinite(previous) || previous <= 0) return null;
   return Math.abs(candidateCount - previous) / previous;
 }
 
-export function formatVariation(ratio) {
+export function formatVariation(ratio: number): string {
   return (Math.round(ratio * 1000) / 10).toFixed(1);
 }
 
-function assertRecordCountVariation(snapshot, active, confirmVariation) {
+function assertRecordCountVariation(
+  snapshot: CanonicalSnapshot,
+  active: Row | null,
+  confirmVariation: string | null,
+): RecordCountDelta {
   const variation = calculateRecordCountVariation(active?.record_count, snapshot.record_count);
-  if (variation === null) return { previousRecordCount: null, variation: null };
+  if (variation === null || !active) return { previousRecordCount: null, variation: null };
   const observed = formatVariation(variation);
   if (variation > maxRecordCountVariation && confirmVariation !== observed) {
     const direction = snapshot.record_count < Number(active.record_count) ? "reduce" : "amplía";
@@ -199,21 +218,30 @@ function assertRecordCountVariation(snapshot, active, confirmVariation) {
   return { previousRecordCount: Number(active.record_count), variation: observed };
 }
 
-function cloudflareError(payload, status) {
+function cloudflareError(payload: { errors?: unknown } | undefined, status: number) {
   const codes = Array.isArray(payload?.errors)
-    ? payload.errors.map((error) => error?.code).filter(Number.isInteger).join(",")
+    ? payload.errors.map((error: { code?: unknown } | null) => error?.code).filter(Number.isInteger).join(",")
     : "";
   return new Error(`Cloudflare D1 rechazó la operación (${status})${codes ? ` [códigos: ${codes}]` : "."}`);
 }
 
-export class D1RestClient {
-  constructor({ accountId, databaseId, apiToken, fetchImpl = fetch }) {
+export class D1RestClient implements D1Client {
+  url: string;
+  apiToken: string;
+  fetchImpl: typeof fetch;
+
+  constructor({ accountId, databaseId, apiToken, fetchImpl = fetch }: {
+    accountId: string;
+    databaseId: string;
+    apiToken: string;
+    fetchImpl?: typeof fetch;
+  }) {
     this.url = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/d1/database/${encodeURIComponent(databaseId)}/query`;
     this.apiToken = apiToken;
     this.fetchImpl = fetchImpl;
   }
 
-  async query(statements) {
+  async query(statements: Statement[]): Promise<QueryResult[]> {
     const response = await this.fetchImpl(this.url, {
       method: "POST",
       headers: {
@@ -222,28 +250,28 @@ export class D1RestClient {
       },
       body: JSON.stringify({ batch: statements }),
     });
-    let payload;
+    let payload: { success?: unknown; result?: unknown; errors?: unknown } | undefined;
     try {
-      payload = await response.json();
+      payload = (await response.json()) as typeof payload;
     } catch {
       throw new Error(`Cloudflare D1 devolvió una respuesta no válida (${response.status}).`);
     }
     if (!response.ok || payload?.success !== true || !Array.isArray(payload.result)) {
       throw cloudflareError(payload, response.status);
     }
-    if (payload.result.some((result) => result?.success !== true)) {
+    if (payload.result.some((result: QueryResult | null) => result?.success !== true)) {
       throw new Error("Cloudflare D1 no completó uno de los statements del lote.");
     }
     return payload.result;
   }
 }
 
-function firstRow(queryResult) {
+function firstRow(queryResult: QueryResult | undefined): Row | null {
   return queryResult?.results?.[0] ?? null;
 }
 
-function assertExistingMetadata(existing, snapshot) {
-  const expected = {
+function assertExistingMetadata(existing: Row, snapshot: CanonicalSnapshot) {
+  const expected: Row = {
     schema_version: snapshot.schema_version,
     generated_at: snapshot.generated_at,
     source: snapshot.source,
@@ -255,7 +283,7 @@ function assertExistingMetadata(existing, snapshot) {
   }
 }
 
-export async function assertSchemaInvariants(plan, client) {
+export async function assertSchemaInvariants(plan: { schemaCheck: Statement }, client: D1Client) {
   const [result] = await client.query([plan.schemaCheck]);
   const present = new Set((result?.results ?? []).map((row) => row.name));
   const missing = requiredSchemaObjects.filter((name) => !present.has(name));
@@ -267,7 +295,11 @@ export async function assertSchemaInvariants(plan, client) {
   }
 }
 
-export async function applySnapshot(snapshot, client, options = {}) {
+export async function applySnapshot(
+  snapshot: CanonicalSnapshot,
+  client: D1Client,
+  options: ApplyOptions = {},
+): Promise<ReturnType<typeof buildImportPlan>["summary"] & Partial<RecordCountDelta> & { outcome: string }> {
   const plan = buildImportPlan(snapshot, options);
   const importedAt = (options.now ?? new Date()).toISOString();
   await assertSchemaInvariants(plan, client);
@@ -281,7 +313,7 @@ export async function applySnapshot(snapshot, client, options = {}) {
     if (existing.status === "retired") throw new Error("Una dataset_version retirada no puede reactivarse.");
     if (existing.status !== "staging") throw new Error("Estado de snapshot no reconocido.");
   }
-  if (active && Date.parse(snapshot.generated_at) <= Date.parse(active.generated_at)) {
+  if (active && Date.parse(snapshot.generated_at) <= Date.parse(String(active.generated_at))) {
     throw new Error("El snapshot candidato no es más reciente que el activo.");
   }
   const delta = assertRecordCountVariation(snapshot, active, options.confirmVariation ?? null);
@@ -311,8 +343,8 @@ export async function applySnapshot(snapshot, client, options = {}) {
 
 function usage() {
   return `Uso:
-  node scripts/data/import-d1.mjs [snapshot.json]
-  node scripts/data/import-d1.mjs [snapshot.json] --apply --confirm-dataset VERSION
+  node scripts/data/import-d1.ts [snapshot.json]
+  node scripts/data/import-d1.ts [snapshot.json] --apply --confirm-dataset VERSION
 
 Sin --apply se ejecuta únicamente validación local y no se accede a la red.
 
@@ -327,11 +359,11 @@ por comas y sin esquema ni ruta. Sin esa variable la lista queda vacía y solo s
 admiten rutas propias del dominio.`;
 }
 
-export function readValidationOptions(runtimeEnv = process.env) {
+export function readValidationOptions(runtimeEnv: RuntimeEnv = process.env): ValidationOptions {
   return { allowedPhotoHosts: parseAllowedPhotoHosts(runtimeEnv.PADRON_ALLOWED_PHOTO_HOSTS) };
 }
 
-export async function runCli(argv, runtimeEnv = process.env) {
+export async function runCli(argv: string[], runtimeEnv: RuntimeEnv = process.env): Promise<Record<string, unknown>> {
   const options = parseCliArgs(argv);
   if (options.help) return { help: usage() };
   const snapshot = JSON.parse(await readFile(options.snapshotPath, "utf8"));
@@ -345,9 +377,9 @@ export async function runCli(argv, runtimeEnv = process.env) {
   const missing = required.filter((name) => !runtimeEnv[name]);
   if (missing.length) throw new Error(`Faltan variables de entorno requeridas: ${missing.join(", ")}.`);
   const client = new D1RestClient({
-    apiToken: runtimeEnv.CLOUDFLARE_API_TOKEN,
-    accountId: runtimeEnv.CLOUDFLARE_ACCOUNT_ID,
-    databaseId: runtimeEnv.CLOUDFLARE_D1_DATABASE_ID,
+    apiToken: runtimeEnv.CLOUDFLARE_API_TOKEN as string,
+    accountId: runtimeEnv.CLOUDFLARE_ACCOUNT_ID as string,
+    databaseId: runtimeEnv.CLOUDFLARE_D1_DATABASE_ID as string,
   });
   return {
     mode: "apply",

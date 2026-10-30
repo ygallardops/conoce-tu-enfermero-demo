@@ -2,7 +2,10 @@ const wildcardPattern = /[*%_]/;
 const consultaFields = new Set(["tipo", "valor", "turnstile_token"]);
 const maxTurnstileTokenLength = 4_096;
 
-export function normalizeSearchValue(value) {
+export type ConsultaInput = { tipo: "cep" | "nombre"; valor: string };
+export type ConsultaValidation = { ok: true; value: ConsultaInput } | { ok: false; message: string };
+
+export function normalizeSearchValue(value: unknown): string {
   return String(value)
     .trim()
     .normalize("NFD")
@@ -12,7 +15,7 @@ export function normalizeSearchValue(value) {
     .toUpperCase();
 }
 
-export function validateConsultaPayload(body) {
+export function validateConsultaPayload(body: unknown): ConsultaValidation {
   if (body === null || typeof body !== "object" || Array.isArray(body)) {
     return { ok: false, message: "El formato de la consulta no es válido." };
   }
@@ -20,7 +23,7 @@ export function validateConsultaPayload(body) {
     return { ok: false, message: "El formato de la consulta no es válido." };
   }
 
-  const { tipo, valor, turnstile_token: turnstileToken } = body;
+  const { tipo, valor, turnstile_token: turnstileToken } = body as Record<string, unknown>;
   if (tipo !== "cep" && tipo !== "nombre") {
     return { ok: false, message: "Selecciona un tipo de consulta válido." };
   }

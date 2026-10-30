@@ -13,21 +13,26 @@ import {
   readValidationOptions,
   requiredSchemaObjects,
   runCli,
-} from "../scripts/data/import-d1.mjs";
+  type D1Client,
+  type Statement,
+} from "../scripts/data/import-d1.ts";
 import {
   calculateRecordsChecksum,
   parseAllowedPhotoHosts,
   validateCanonicalSnapshot,
-} from "../scripts/data/snapshot-validation.mjs";
+  type CanonicalSnapshot,
+} from "../scripts/data/snapshot-validation.ts";
 
-async function demoSnapshot() {
+type QueryResult = Awaited<ReturnType<D1Client["query"]>>;
+
+async function demoSnapshot(): Promise<CanonicalSnapshot> {
   return JSON.parse(await readFile(
     new URL("../data/demo/canonical/padron-snapshot.json", import.meta.url),
     "utf8",
   ));
 }
 
-async function withSnapshotFile(snapshot, run) {
+async function withSnapshotFile<T>(snapshot: unknown, run: (path: string) => Promise<T>): Promise<T> {
   const directory = await mkdtemp(join(tmpdir(), "cep-snapshot-"));
   const path = join(directory, "snapshot.json");
   try {
@@ -38,26 +43,30 @@ async function withSnapshotFile(snapshot, run) {
   }
 }
 
-function successfulResult(results = []) {
+function successfulResult(results: Record<string, unknown>[] = []) {
   return { success: true, results };
 }
 
-function isSchemaCheck(statements) {
+function isSchemaCheck(statements: Statement[]) {
   return statements.length === 1 && statements[0].sql.includes("FROM sqlite_master");
 }
 
-function migratedSchemaResult(present = requiredSchemaObjects) {
+function migratedSchemaResult(present: readonly string[] = requiredSchemaObjects) {
   return [successfulResult(present.map((name) => ({ name })))];
 }
 
-class SuccessfulD1Client {
-  constructor(snapshot) {
+class SuccessfulD1Client implements D1Client {
+  snapshot: CanonicalSnapshot;
+  calls: Statement[][];
+  persistedCount: number;
+
+  constructor(snapshot: CanonicalSnapshot) {
     this.snapshot = snapshot;
     this.calls = [];
     this.persistedCount = 0;
   }
 
-  async query(statements) {
+  async query(statements: Statement[]): Promise<QueryResult> {
     this.calls.push(structuredClone(statements));
     if (isSchemaCheck(statements)) return migratedSchemaResult();
     if (statements.length === 2 && statements[0].sql.includes("FROM padron_snapshots WHERE dataset_version")) {
@@ -82,15 +91,20 @@ class SuccessfulD1Client {
   }
 }
 
-class ExistingSnapshotClient {
-  constructor(snapshot, { status, activeGeneratedAt = null }) {
+class ExistingSnapshotClient implements D1Client {
+  snapshot: CanonicalSnapshot;
+  status: string;
+  activeGeneratedAt: string | null;
+  calls: Statement[][];
+
+  constructor(snapshot: CanonicalSnapshot, { status, activeGeneratedAt = null }: { status: string; activeGeneratedAt?: string | null }) {
     this.snapshot = snapshot;
     this.status = status;
     this.activeGeneratedAt = activeGeneratedAt;
     this.calls = [];
   }
 
-  async query(statements) {
+  async query(statements: Statement[]): Promise<QueryResult> {
     this.calls.push(structuredClone(statements));
     if (isSchemaCheck(statements)) return migratedSchemaResult();
     if (statements.length === 2 && statements[0].sql.includes("FROM padron_snapshots WHERE dataset_version")) {
@@ -113,13 +127,19 @@ class ExistingSnapshotClient {
 }
 
 class ActiveSnapshotClient extends SuccessfulD1Client {
-  constructor(snapshot, { activeRecordCount, activeGeneratedAt = "2026-08-01T15:00:00.000Z" }) {
+  activeRecordCount: number;
+  activeGeneratedAt: string;
+
+  constructor(
+    snapshot: CanonicalSnapshot,
+    { activeRecordCount, activeGeneratedAt = "2026-08-01T15:00:00.000Z" }: { activeRecordCount: number; activeGeneratedAt?: string },
+  ) {
     super(snapshot);
     this.activeRecordCount = activeRecordCount;
     this.activeGeneratedAt = activeGeneratedAt;
   }
 
-  async query(statements) {
+  async query(statements: Statement[]): Promise<QueryResult> {
     if (statements.length === 2 && statements[0].sql.includes("FROM padron_snapshots WHERE dataset_version")) {
       this.calls.push(structuredClone(statements));
       return [successfulResult(), successfulResult([{
@@ -132,7 +152,7 @@ class ActiveSnapshotClient extends SuccessfulD1Client {
   }
 }
 
-function truncatedSnapshot(snapshot, recordCount) {
+function truncatedSnapshot(snapshot: CanonicalSnapshot, recordCount: number): CanonicalSnapshot {
   const candidate = structuredClone(snapshot);
   candidate.records = candidate.records.slice(0, recordCount);
   candidate.record_count = candidate.records.length;
@@ -141,7 +161,7 @@ function truncatedSnapshot(snapshot, recordCount) {
 }
 
 class IncompleteD1Client extends SuccessfulD1Client {
-  async query(statements) {
+  async query(statements: Statement[]): Promise<QueryResult> {
     if (statements[0].sql.startsWith("SELECT COUNT(*) AS persisted_count")) {
       this.calls.push(structuredClone(statements));
       return [successfulResult([{ persisted_count: this.persistedCount - 1 }])];
@@ -205,7 +225,7 @@ test("la ingesta se detiene si al esquema le falta una invariante", async () => 
   for (const ausente of requiredSchemaObjects) {
     const presentes = requiredSchemaObjects.filter((name) => name !== ausente);
     const client = new SuccessfulD1Client(snapshot);
-    client.query = async (statements) => {
+    client.query = async (statements: Statement[]): Promise<QueryResult> => {
       client.calls.push(structuredClone(statements));
       if (isSchemaCheck(statements)) return migratedSchemaResult(presentes);
       return SuccessfulD1Client.prototype.query.call(client, statements);
@@ -213,7 +233,7 @@ test("la ingesta se detiene si al esquema le falta una invariante", async () => 
 
     await assert.rejects(
       applySnapshot(snapshot, client),
-      (error) => error.message.includes(ausente) && error.message.includes("migrations apply"),
+      (error: Error) => error.message.includes(ausente) && error.message.includes("migrations apply"),
       `falta ${ausente}`,
     );
     assert.equal(client.calls.length, 1, "no debe escribir nada tras detectar el esquema incompleto");
@@ -263,7 +283,7 @@ test("el CLI aprueba fotografías externas solo a través de la variable de ento
   snapshot.records[0].foto_url = "https://imagenes.example/foto.webp";
   snapshot.checksum_sha256 = calculateRecordsChecksum(snapshot.records);
 
-  await withSnapshotFile(snapshot, async (path) => {
+  await withSnapshotFile(snapshot, async (path: string) => {
     await assert.rejects(runCli([path], {}), /hosts aprobados/);
 
     const approved = await runCli([path], { PADRON_ALLOWED_PHOTO_HOSTS: " Imagenes.Example , imagenes.example " });
@@ -338,7 +358,7 @@ test("un snapshot sin registros no es publicable por ninguna vía", async () => 
   assert.equal(vacio.checksum_sha256, "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945");
   assert.throws(() => validateCanonicalSnapshot(vacio), /sin registros no es publicable/);
   assert.throws(() => buildImportPlan(vacio), /sin registros no es publicable/);
-  await withSnapshotFile(vacio, async (path) => {
+  await withSnapshotFile(vacio, async (path: string) => {
     await assert.rejects(runCli([path], {}), /sin registros no es publicable/);
   });
 
