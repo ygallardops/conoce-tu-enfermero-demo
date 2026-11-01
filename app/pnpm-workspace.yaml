@@ -49,6 +49,17 @@ overrides:
 # Retirar en cuanto exista braces 3.0.4. Dependabot no tiene alerta de este
 # aviso, asi que el recordatorio es el repaso semanal de la seccion 9 del
 # runbook: "pnpm view braces version".
+#
+# Excepcion temporal, abierta el 2026-11-01. GHSA-g3hv-75wg-m249 (minimatch,
+# denegacion de servicio por amplificacion de globparts) solo se corrige en
+# 11.0.1. No hay parche para las ramas 3.x y 10.x que exigen eslint, sus
+# plugins y typescript-eslint, y forzar la 11 rompe a los consumidores de la
+# 3.x, cuya API de importacion cambio. minimatch solo interviene en lint, con
+# patrones de la configuracion del proyecto y nunca con entrada de quien
+# consulta. Retirar cuando exista parche en 3.x y 10.x o la cadena de eslint
+# pase a 11: comprobar en el repaso semanal con "pnpm why minimatch" y
+# "pnpm view minimatch@3 version".
 auditConfig:
   ignoreGhsas:
     - GHSA-vfj7-8cjw-p6xm
+    - GHSA-g3hv-75wg-m249
