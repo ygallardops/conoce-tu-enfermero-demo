@@ -40,26 +40,15 @@ overrides:
   # que undici. Solo interviene en el build.
   fflate: ^0.7.5
 
-# Excepcion temporal, abierta el 2026-10-09. GHSA-vfj7-8cjw-p6xm (braces,
-# desbordamiento de pila con patrones muy anidados) no tiene version corregida
-# publicada: afecta hasta 3.0.3, que es la ultima. braces solo interviene en
-# lint y build, con patrones de los ficheros de configuracion del proyecto y
-# nunca con entrada de quien consulta. Sin la excepcion, pnpm audit bloquea
-# todas las pull requests, incluidas las que corrigen otros avisos.
-# Retirar en cuanto exista braces 3.0.4. Dependabot no tiene alerta de este
-# aviso, asi que el recordatorio es el repaso semanal de la seccion 9 del
-# runbook: "pnpm view braces version".
-#
 # Excepcion temporal, abierta el 2026-11-01. GHSA-g3hv-75wg-m249 (minimatch,
-# denegacion de servicio por amplificacion de globparts) solo se corrige en
-# 11.0.1. No hay parche para las ramas 3.x y 10.x que exigen eslint, sus
-# plugins y typescript-eslint, y forzar la 11 rompe a los consumidores de la
-# 3.x, cuya API de importacion cambio. minimatch solo interviene en lint, con
-# patrones de la configuracion del proyecto y nunca con entrada de quien
-# consulta. Retirar cuando exista parche en 3.x y 10.x o la cadena de eslint
-# pase a 11: comprobar en el repaso semanal con "pnpm why minimatch" y
-# "pnpm view minimatch@3 version".
+# denegacion de servicio por amplificacion de globparts) afecta a >=7.0.0
+# <11.0.1. La unica version afectada del arbol es la 10.2.6 que exige
+# @typescript-eslint/typescript-estree 8.72; la 3.1.5 queda fuera del rango.
+# minimatch solo interviene en lint, con patrones de la configuracion del
+# proyecto y nunca con entrada de quien consulta. Retirar al subir
+# typescript-eslint a 8.73.0 o posterior, que ya usa minimatch 11, en cuanto
+# supere la antiguedad minima de publicacion de pnpm (a partir del
+# 2026-11-17 17:08 UTC). No se excluye de esa regla para adelantarlo.
 auditConfig:
   ignoreGhsas:
-    - GHSA-vfj7-8cjw-p6xm
     - GHSA-g3hv-75wg-m249
