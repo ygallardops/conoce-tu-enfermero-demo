@@ -39,16 +39,3 @@ overrides:
   # malformado). Rango con suelo en la version corregida, por la misma razon
   # que undici. Solo interviene en el build.
   fflate: ^0.7.5
-
-# Excepcion temporal, abierta el 2026-11-01. GHSA-g3hv-75wg-m249 (minimatch,
-# denegacion de servicio por amplificacion de globparts) afecta a >=7.0.0
-# <11.0.1. La unica version afectada del arbol es la 10.2.6 que exige
-# @typescript-eslint/typescript-estree 8.72; la 3.1.5 queda fuera del rango.
-# minimatch solo interviene en lint, con patrones de la configuracion del
-# proyecto y nunca con entrada de quien consulta. Retirar al subir
-# typescript-eslint a 8.73.0 o posterior, que ya usa minimatch 11, en cuanto
-# supere la antiguedad minima de publicacion de pnpm (a partir del
-# 2026-11-17 17:08 UTC). No se excluye de esa regla para adelantarlo.
-auditConfig:
-  ignoreGhsas:
-    - GHSA-g3hv-75wg-m249
